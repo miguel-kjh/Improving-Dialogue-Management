@@ -1,0 +1,4 @@
+name: "sgd"
+path: "datasets/sgd.h5"
+set: "single_domain"
+wandb: False
