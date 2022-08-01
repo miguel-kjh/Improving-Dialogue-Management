@@ -1,0 +1,1 @@
+LOCAL_SERVER = "mongodb://localhost:27017"

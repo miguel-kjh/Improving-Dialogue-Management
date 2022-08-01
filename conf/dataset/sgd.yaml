@@ -1,4 +1,5 @@
-name: "sgd"
-path: "datasets/sgd.h5"
-set: "single_domain"
-wandb: False
+name: "SGD"
+set: "TINY"
+intention: "Intention"
+action: "Action"
+max_history: 5

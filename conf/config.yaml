@@ -2,3 +2,4 @@ database:
   - path: mongodb://localhost:27017
 defaults:
   - dataset: sgd.yaml
+  - model: ted.yaml
