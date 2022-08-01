@@ -1,4 +1,5 @@
 import ast
+import copy
 import os
 import shutil
 
@@ -20,6 +21,9 @@ from utils.Domain import Domain
 from utils.ProjectConstants import PROJECT_NAME, NUM_GPUS, SGD_DATASET_RES, METRIC_FOLDER
 from sklearn.preprocessing import LabelEncoder
 from utils.TrainUtils import get_model, save_plot
+
+from models.dialogue_state_tracker.StateTracker import StateTracker
+from service.MongoDB import MongoDB
 from view.Logger import Logger
 
 import seaborn as sn
@@ -27,39 +31,45 @@ import seaborn as sn
 
 class TrainAndEvaluateService(Pipeline):
 
-    def __init__(
-            self,
-            model_config: str,
-            domain: Domain,
-            filename: str,
-            name_experiment: str,
-            activate_wandb_logging: bool = False
-    ):
+    def __init__(self, configuration: dict):
         super().__init__()
-        self.configuration = self.input_json_service.load(model_config)
-        self.file_config = \
-            f"{os.path.basename(model_config).replace('.json', '')}_" \
-            f"{os.path.basename(filename).replace('.csv', '')}_{domain.name}"
-        self.type_feature = self.configuration['config']['type_feature']
-        path = filename + "_" + str(domain)
-        self.domain = domain
+        self.configuration = copy.deepcopy(configuration)
+        self.mongodb_service = MongoDB()
+        self.state_tracker = StateTracker()
+
+        name = self.configuration['dataset']['name']
+        domain = self.configuration['dataset']['domain']
+        column_for_intentions = self.configuration['dataset']['intention']
+        column_for_actions = self.configuration['dataset']['action']
+        max_history_length = self.configuration['dataset']['max_history']
+        dataset_name = f"{name}_dataset_{domain}"
+        file_dataset = f"{dataset_name}_state_tracker_{column_for_intentions}_{column_for_actions}_" \
+                       f"max_history={max_history_length}"
+        self.name_experiment = f"{name}_{domain}_{column_for_intentions}_{column_for_actions}" \
+                               f"_{max_history_length}"
+        self.dataset = self.mongodb_service.load(file_dataset)
+        if self.dataset.empty:
+            Logger.info("Dataset with that configuration is empty")
+            Logger.info("Create new dataset with that configuration")
+            df = self.mongodb_service.load(dataset_name)
+            self.dataset = self.state_tracker.get_state_and_actions(
+                df,
+                column_for_intentions=column_for_intentions,
+                column_for_actions=column_for_actions,
+                mx_history_length=max_history_length
+            )
+            self.mongodb_service.save(self.dataset, file_dataset)
+        path = f"{self.configuration['dataset']['name']}_dataset_{self.domain}"
         self.dataset = self.mongodb_service.load(path)
-        self.embeddings = np.array(self.dataset[self.type_feature].tolist())
+        self.embeddings = np.array(self.dataset['State'].tolist())
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
         self.actions = self.action_encoder.fit_transform(self.labels)
         self.num_classes = len(self.action_encoder.classes_)
-        self.activate_wandb_logging = activate_wandb_logging
-        self.priority = 4
-        self.path_results = os.path.join(
-            METRIC_FOLDER,
-            self.file_config,
-        )
-        self.name_experiment = name_experiment
+        self.activate_wandb_logging = self.configuration['resources']['wandb']
 
-        self._create_folder(self.path_results)
-
-    def _create_folder(self, path: str):
+    @staticmethod
+    def _create_folder(path: str):
 
         if os.path.exists(path):
             shutil.rmtree(path)

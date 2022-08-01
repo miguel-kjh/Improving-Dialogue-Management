@@ -20,3 +20,4 @@ epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
+name: "TED"

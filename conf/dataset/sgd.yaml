@@ -1,5 +1,5 @@
 name: "SGD"
-set: "TINY"
+domain: "TINY"
 intention: "Intention"
 action: "Action"
-max_history: 5
+max_history: 10

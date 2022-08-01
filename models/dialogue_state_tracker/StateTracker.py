@@ -27,9 +27,6 @@ class WindowStack:
 
 class StateTracker:
 
-    def __init__(self, df_data: pd.DataFrame):
-        self.df_data = df_data
-
     @staticmethod
     def _get_embedding(
             intention: list,
@@ -87,6 +84,7 @@ class StateTracker:
 
     def get_state_and_actions(
             self,
+            df_data_oring: pd.DataFrame,
             column_for_intentions,
             column_for_actions,
             mx_history_length=None
@@ -97,7 +95,7 @@ class StateTracker:
         if mx_history_length is None:
             mx_history_length = 1
 
-        df_data = self.df_data.copy()
+        df_data = df_data_oring.copy()
         actions = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         slots = sorted(list(set(np.hstack(df_data['Slots'].values))))
@@ -163,14 +161,23 @@ class StateTracker:
 def main():
     mongodb_service = MongoDB()
     df = mongodb_service.load("SGD_dataset_TINY")
-    state_tracker = StateTracker(df)
-    df = state_tracker.get_state_and_actions(
-        column_for_intentions="Intention",
-        column_for_actions="Action",
+    state_tracker = StateTracker()
+    column_for_intentions = 'Intention'
+    column_for_actions = 'Action'
+    max_history_length = 5
+    """df = state_tracker.get_state_and_actions(
+        df,
+        column_for_intentions=column_for_intentions,
+        column_for_actions=column_for_actions,
         mx_history_length=4
     )
 
-    mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_max_history={4}")
+    mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
+                             f"max_history={max_history_length}")"""
+
+    df = mongodb_service.load(f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
+                              f"max_history={10}")
+    print(df.head())
 
 
 if __name__ == '__main__':
