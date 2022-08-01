@@ -8,6 +8,7 @@ from models.dialogue_state_tracker.WindowStack import WindowStack
 from service.MongoDB import MongoDB
 
 
+# TODO: add slots to the embeddings with actions only
 class StateTracker:
 
     @staticmethod
