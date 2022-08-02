@@ -1,3 +1,5 @@
+from copy import copy
+
 from git import Object
 from service.InputService import InputService
 from service.OutputService import OutputService
@@ -38,7 +40,7 @@ class MongoDB(InputService, OutputService):
         if type(df) is pd.DataFrame:
             data = df.to_dict('records')
         else:
-            data = df
+            data = copy(df)
 
         if collection.count_documents({}) > 0:
             Logger.info("Dropping last data from Mongo DB Server .... ")

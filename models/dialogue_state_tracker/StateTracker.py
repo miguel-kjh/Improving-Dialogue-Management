@@ -33,7 +33,13 @@ class StateTracker:
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
 
-        return np.hstack((intention_embedding, slot_embedding, action_embedding)).tolist()
+        return np.hstack(
+            (
+                intention_embedding,
+                slot_embedding,
+                action_embedding
+            )
+        ).tolist()
 
     @staticmethod
     def _get_schema_dialogue_state_dataset() -> dict:
@@ -77,7 +83,7 @@ class StateTracker:
             mx_history_length=None
     ) -> pd.DataFrame:
 
-        assert mx_history_length > 1, "mx_history_length must be greater than 1"
+        assert mx_history_length > 0, "mx_history_length must be greater than 0"
 
         if mx_history_length is None:
             mx_history_length = 1
@@ -97,7 +103,7 @@ class StateTracker:
             for row in df_group.to_dict('records'):
                 action = row[column_for_actions][0]
                 window.add(self._get_embedding(
-                    row['Intention'],
+                    row[column_for_intentions],
                     intents,
                     row['Slots'],
                     slots,
@@ -110,7 +116,7 @@ class StateTracker:
                 self._add_state_to_schema(
                     dialogue_state,
                     id_,
-                    row['Intention'],
+                    row[column_for_intentions],
                     row['Slots'],
                     last_action,
                     action,
@@ -119,11 +125,12 @@ class StateTracker:
                     window.get_stack()
                 )
                 last_action = copy(action)
-                for action in row[column_for_actions]:
+                last_slots = copy(row['Slots'])
+                for action in row[column_for_actions][1:]:
                     window.add(self._get_embedding(
                         [],
                         intents,
-                        [],
+                        last_slots,
                         slots,
                         last_action,
                         actions,
@@ -135,7 +142,7 @@ class StateTracker:
                         dialogue_state,
                         id_,
                         [],
-                        [],
+                        last_slots,
                         last_action,
                         action,
                         row[column_for_actions],
@@ -151,22 +158,20 @@ def main():
     mongodb_service = MongoDB()
     df = mongodb_service.load("SGD_dataset_TINY")
     state_tracker = StateTracker()
-    column_for_intentions = 'Intention'
+    column_for_intentions = 'Atomic Intent'
     column_for_actions = 'Action'
     max_history_length = 5
-    """df = state_tracker.get_state_and_actions(
+    df = state_tracker.get_state_and_actions(
         df,
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions,
-        mx_history_length=4
+        mx_history_length=max_history_length
     )
+    print(len(df['State'][0]), len(df['State'][0][0]))
+    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
 
-    mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
+    """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""
-
-    df = mongodb_service.load(f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
-                              f"max_history={10}")
-    print(df.head())
 
 
 if __name__ == '__main__':

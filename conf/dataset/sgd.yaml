@@ -1,5 +1,5 @@
 name: "SGD_dataset"
 domain: "TINY"
-intention: "Intention"
-action: "Action"
-max_history: 10
+intention: "Atomic Intent"
+action: "Atomic Action"
+max_history: 1

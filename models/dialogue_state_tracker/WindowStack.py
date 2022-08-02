@@ -15,5 +15,5 @@ class WindowStack:
     def __len__(self):
         return len(self.stack)
 
-    def get_stack(self) -> np.array:
-        return self.stack  # list(reversed(self.stack))
+    def get_stack(self) -> list:
+        return list(reversed(self.stack))

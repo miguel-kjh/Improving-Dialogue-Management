@@ -132,3 +132,5 @@ dmypy.json
 .idea/
 outputs/
 multirun/
+checkpoints/
+data/

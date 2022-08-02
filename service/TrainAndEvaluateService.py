@@ -38,24 +38,25 @@ class TrainAndEvaluateService:
                        f"max_history={max_history_length}"
         self.name_experiment = f"{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
                                f"_{max_history_length}"
-        self.dataset = self.mongodb_service.load(file_dataset)
-        if self.dataset.empty or create_states:
-            Logger.info("Dataset with that configuration is empty")
-            Logger.info("Create new dataset with that configuration")
-            df = self.mongodb_service.load(dataset_name)
-            self.dataset = self.state_tracker.get_state_and_actions(
-                df,
-                column_for_intentions=column_for_intentions,
-                column_for_actions=column_for_actions,
-                mx_history_length=max_history_length
-            )
-            self.mongodb_service.save(self.dataset, file_dataset)
+        #self.dataset = self.mongodb_service.load(file_dataset)
+        Logger.info("Create new dataset with that configuration")
+        df = self.mongodb_service.load(dataset_name)
+        self.dataset = self.state_tracker.get_state_and_actions(
+            df,
+            column_for_intentions=column_for_intentions,
+            column_for_actions=column_for_actions,
+            mx_history_length=max_history_length
+        )
+        #self.mongodb_service.save(self.dataset, file_dataset)
         self.embeddings = np.array(self.dataset['State'].tolist())
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
         self.actions = self.action_encoder.fit_transform(self.labels)
         self.num_classes = len(self.action_encoder.classes_)
         self.activate_wandb_logging = self.configuration['resources']['wandb']
+        self.dataset.to_csv(
+            os.path.join("data", f"{file_dataset}.csv"), index=False
+        )
 
     @staticmethod
     def _create_folder(path: str):
@@ -129,7 +130,7 @@ class TrainAndEvaluateService:
     def _evaluate(self, trainer: pl.Trainer, data: SgdDataModule) -> None:
         trainer.test(datamodule=data)
         test_results = trainer.model.test_results
-        self._update_test_results(test_results)
+        """self._update_test_results(test_results)
 
         test_results = pd.DataFrame(test_results)
         Logger.info('Save results')
@@ -153,7 +154,7 @@ class TrainAndEvaluateService:
         self.output_csv_service.save(
             actions_results,
             actions_results_file
-        )
+        )"""
 
         if self.activate_wandb_logging:
             wandb.finish()
@@ -209,4 +210,4 @@ class TrainAndEvaluateService:
         )
 
         trainer = self._fit(model, sgd_module)
-        #self._evaluate(trainer, sgd_module)
+        self._evaluate(trainer, sgd_module)
