@@ -6,9 +6,8 @@ import torch
 import pytorch_lightning as pl
 import torch.nn as nn
 
-from models.policies.EmbeddingsCollector import EmbeddingsCollector
 from utils.ted_utils import get_metrics, create_ffn_layer, create_embedding_layer
-from models.policies.DotProductLoss import SingleLabelDotProductLoss
+from models.dialogue_policy.loss.DotProductLoss import SingleLabelDotProductLoss
 
 
 class EmbeddingPolicy(pl.LightningModule):
@@ -71,8 +70,6 @@ class EmbeddingPolicy(pl.LightningModule):
             'Inputs': copy(self.actions_one_hot),
             'Embeddings': [],
         }
-
-        self.output_embeddings = EmbeddingsCollector()
 
     def get_test_results(self) -> Dict[str, List]:
 

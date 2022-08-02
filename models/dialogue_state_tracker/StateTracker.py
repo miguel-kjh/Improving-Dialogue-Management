@@ -43,6 +43,7 @@ class StateTracker:
             'Slots': [],
             'Prev_action': [],
             'Label': [],
+            'Set_Label': [],
             'Type': [],
             'State': []
         }
@@ -55,6 +56,7 @@ class StateTracker:
             slots: list,
             prev_action: str,
             label: str,
+            set_label: str,
             type: str,
             state: np.array
     ):
@@ -63,6 +65,7 @@ class StateTracker:
         schema['Slots'].append(slots)
         schema['Prev_action'].append(prev_action)
         schema['Label'].append(label)
+        schema['Set_Label'].append(set_label)
         schema['Type'].append(type)
         schema['State'].append(state)
 
@@ -111,6 +114,7 @@ class StateTracker:
                     row['Slots'],
                     last_action,
                     action,
+                    row[column_for_actions],
                     row['Type'],
                     window.get_stack()
                 )
@@ -134,6 +138,7 @@ class StateTracker:
                         [],
                         last_action,
                         action,
+                        row[column_for_actions],
                         row['Type'],
                         window.get_stack()
                     )

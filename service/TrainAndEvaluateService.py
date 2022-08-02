@@ -4,51 +4,42 @@ import os
 import shutil
 
 import numpy as np
-from numpy import isin
 import pytorch_lightning as pl
 import pandas as pd
-from matplotlib import pyplot as plt
 from pytorch_lightning.loggers import WandbLogger
-from sqlalchemy import desc
 from tqdm import tqdm
 import wandb
-from sklearn.manifold import TSNE
-from sklearn.metrics import confusion_matrix
 
-from service.Pipeline.Pipeline import Pipeline
-from service.Pipeline.SgdDataModule import SgdDataModule
-from utils.Domain import Domain
-from utils.ProjectConstants import PROJECT_NAME, NUM_GPUS, SGD_DATASET_RES, METRIC_FOLDER
 from sklearn.preprocessing import LabelEncoder
-from utils.TrainUtils import get_model, save_plot
+from service.SgdDataModule import SgdDataModule
 
 from models.dialogue_state_tracker.StateTracker import StateTracker
+from models.dialogue_policy.supervised_learning.TedPolicy import Ted
+from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from service.MongoDB import MongoDB
 from view.Logger import Logger
 
-import seaborn as sn
 
+class TrainAndEvaluateService:
 
-class TrainAndEvaluateService(Pipeline):
-
-    def __init__(self, configuration: dict):
+    def __init__(self, configuration: dict, create_states: bool = True):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
         self.mongodb_service = MongoDB()
         self.state_tracker = StateTracker()
 
-        name = self.configuration['dataset']['name']
+        self.name = self.configuration['dataset']['name']
         domain = self.configuration['dataset']['domain']
         column_for_intentions = self.configuration['dataset']['intention']
         column_for_actions = self.configuration['dataset']['action']
         max_history_length = self.configuration['dataset']['max_history']
-        dataset_name = f"{name}_dataset_{domain}"
+        dataset_name = f"{self.name}_{domain}"
         file_dataset = f"{dataset_name}_state_tracker_{column_for_intentions}_{column_for_actions}_" \
                        f"max_history={max_history_length}"
-        self.name_experiment = f"{name}_{domain}_{column_for_intentions}_{column_for_actions}" \
+        self.name_experiment = f"{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
                                f"_{max_history_length}"
         self.dataset = self.mongodb_service.load(file_dataset)
-        if self.dataset.empty:
+        if self.dataset.empty or create_states:
             Logger.info("Dataset with that configuration is empty")
             Logger.info("Create new dataset with that configuration")
             df = self.mongodb_service.load(dataset_name)
@@ -59,8 +50,6 @@ class TrainAndEvaluateService(Pipeline):
                 mx_history_length=max_history_length
             )
             self.mongodb_service.save(self.dataset, file_dataset)
-        path = f"{self.configuration['dataset']['name']}_dataset_{self.domain}"
-        self.dataset = self.mongodb_service.load(path)
         self.embeddings = np.array(self.dataset['State'].tolist())
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
@@ -77,14 +66,23 @@ class TrainAndEvaluateService(Pipeline):
         Logger.info("Creating folder: " + path)
         os.makedirs(path)
 
+    @staticmethod
+    def get_model(model: str, config: dict, num_actions: int) -> pl.LightningModule:
+        models = {
+            "TED": Ted,
+            "LED": Led,
+        }
+
+        return models[model](config, num_actions)
+
     def _fit(self, model: pl.LightningModule, data: SgdDataModule) -> pl.Trainer:
-        wandb_logger = WandbLogger(project=PROJECT_NAME, name=self.name_experiment) \
+        wandb_logger = WandbLogger(project=self.name, name=self.name_experiment) \
             if self.activate_wandb_logging else None
 
         trainer = pl.Trainer(
-            gpus=NUM_GPUS,
+            gpus=self.configuration['resources']['gpus'],
             logger=wandb_logger,
-            max_epochs=self.configuration['config']['epochs'],
+            max_epochs=self.configuration['model']['epochs'],
         )
 
         trainer.fit(model, data)
@@ -105,11 +103,10 @@ class TrainAndEvaluateService(Pipeline):
                 embeddings_transformed[embedding2key] = record_index
             else:
                 record_index = embeddings_transformed[embedding2key]
-            
+
             intentions.append(self.dataset['Intention'][record_index])
             slots.append(self.dataset['Slot'][record_index])
             pre_actions.append(self.dataset['Prev_actions'][record_index])
-                    
 
         return intentions, slots, pre_actions
 
@@ -173,8 +170,7 @@ class TrainAndEvaluateService(Pipeline):
             set_of_label + [-1] * (max_len_of_set_labels - len(set_of_label))
             for set_of_label in set_labels
         ]
-        features = np.array(dataset[self.type_feature].to_list())
-
+        features = np.array(dataset['State'].to_list())
 
         assert len(features) == len(labels) == len(set_labels), \
             f"Bab dimension of features: {len(features)} - " \
@@ -184,18 +180,14 @@ class TrainAndEvaluateService(Pipeline):
 
         return features, labels, set_labels
 
-
     def process(self):
-        Logger.print_dict(self.configuration)
-        Logger.print_sep()
+        n_features = self.embeddings[0].shape[1]
+        self.configuration['model']['n_features'] = n_features
+        self.configuration['model']['hidden_layers_sizes_pre_dial'][0][0] = n_features
 
-        features = self.embeddings[0].shape[0]
-        self.configuration['config']['n_features'] = features
-        self.configuration['config']['hidden_layers_sizes_pre_dial'][0][0] = features
-
-        model = get_model(
+        model = self.get_model(
+            self.configuration['model']['name'],
             self.configuration['model'],
-            self.configuration['config'],
             self.num_classes
         )
 
@@ -213,9 +205,8 @@ class TrainAndEvaluateService(Pipeline):
             test,
             test_labels,
             set_test_labels,
-            batch_size=self.configuration['config']['batch_size'],
-            window_size=self.configuration['config']['window_size']
+            batch_size=self.configuration['model']['batch_size']
         )
 
         trainer = self._fit(model, sgd_module)
-        self._evaluate(trainer, sgd_module)
+        #self._evaluate(trainer, sgd_module)

@@ -1,4 +1,4 @@
-name: "SGD"
+name: "SGD_dataset"
 domain: "TINY"
 intention: "Intention"
 action: "Action"

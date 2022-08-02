@@ -9,7 +9,8 @@ from torch import Tensor
 import numpy as np
 
 from torchmetrics import F1Score
-from utils.metrics.AccuaryBySets import AccuracyBySets
+
+from utils.AccuaryBySets import AccuracyBySets
 
 
 def _f1_score(y_pred: Tensor, y_true: Tensor) -> Tensor:

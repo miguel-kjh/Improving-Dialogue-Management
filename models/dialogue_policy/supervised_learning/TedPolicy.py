@@ -46,11 +46,16 @@ class Ted(EmbeddingPolicy, ABC):
         self.transformer = nn.TransformerEncoder(
             encoder_layer,
             num_layers=self.hparams.num_layers,
-            norm=nn.LayerNorm(self.hparams.encoding_dimension, eps=self.hparams.regularization_constant)
+            norm=nn.LayerNorm(
+                self.hparams.encoding_dimension,
+                eps=self.hparams.regularization_constant
+            )
         )
 
     def _make_a_transformation(self, x):
-        mask = get_tgt_mask(x.size(0)).to(self.device) if self.hparams.unidirectional_encoder else None
+        mask = get_tgt_mask(x.size(0)).to(self.device) \
+            if self.hparams.unidirectional_encoder \
+            else None
         x = self.pre_dial(x)
         x = x * math.sqrt(self.num_features)
         x = self.pos_encoder(x)
