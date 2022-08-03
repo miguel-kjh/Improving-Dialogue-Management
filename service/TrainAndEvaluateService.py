@@ -1,11 +1,9 @@
-import ast
 import copy
 import os
 import shutil
 
 import numpy as np
 import pytorch_lightning as pl
-import pandas as pd
 from pytorch_lightning.loggers import WandbLogger
 from tqdm import tqdm
 import wandb
@@ -16,6 +14,7 @@ from service.SgdDataModule import SgdDataModule
 from models.dialogue_state_tracker.StateTracker import StateTracker
 from models.dialogue_policy.supervised_learning.TedPolicy import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from service.MongoDB import MongoDB
 from view.Logger import Logger
 
@@ -25,7 +24,7 @@ class TrainAndEvaluateService:
     def __init__(self, configuration: dict, create_states: bool = True):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
-        self.mongodb_service = MongoDB()
+        self.mongodb_service = MongoDB(configuration['dataset']['DB_name'], configuration['database'][0]['path'])
         self.state_tracker = StateTracker()
 
         self.name = self.configuration['dataset']['name']
@@ -41,6 +40,8 @@ class TrainAndEvaluateService:
         #self.dataset = self.mongodb_service.load(file_dataset)
         Logger.info("Create new dataset with that configuration")
         df = self.mongodb_service.load(dataset_name)
+        assert not df.empty, f"Dataset {os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
+
         self.dataset = self.state_tracker.get_state_and_actions(
             df,
             column_for_intentions=column_for_intentions,
@@ -54,9 +55,9 @@ class TrainAndEvaluateService:
         self.actions = self.action_encoder.fit_transform(self.labels)
         self.num_classes = len(self.action_encoder.classes_)
         self.activate_wandb_logging = self.configuration['resources']['wandb']
-        self.dataset.to_csv(
+        """self.dataset.to_csv(
             os.path.join("data", f"{file_dataset}.csv"), index=False
-        )
+        )"""
 
     @staticmethod
     def _create_folder(path: str):
@@ -76,6 +77,18 @@ class TrainAndEvaluateService:
 
         return models[model](config, num_actions)
 
+    @staticmethod
+    def __get_callbacks() -> list:
+        callbacks = [
+            EarlyStopping(
+                monitor='val_acc',
+                verbose=True,
+                mode='max'
+            )
+        ]
+
+        return callbacks
+
     def _fit(self, model: pl.LightningModule, data: SgdDataModule) -> pl.Trainer:
         wandb_logger = WandbLogger(project=self.name, name=self.name_experiment) \
             if self.activate_wandb_logging else None
@@ -84,6 +97,7 @@ class TrainAndEvaluateService:
             gpus=self.configuration['resources']['gpus'],
             logger=wandb_logger,
             max_epochs=self.configuration['model']['epochs'],
+            callbacks=self.__get_callbacks()
         )
 
         trainer.fit(model, data)

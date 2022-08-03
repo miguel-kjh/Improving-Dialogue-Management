@@ -61,6 +61,7 @@ class SgdDataModule(pl.LightningDataModule):
             test: np.array,
             label_test: np.array,
             set_labels_test: np.array,
+            type_batch: str = 'sequence',
             batch_size: int = 32
     ):
         super().__init__()
@@ -106,4 +107,5 @@ class SgdDataModule(pl.LightningDataModule):
 
     def test_dataloader(self):
         #sampler = SequentialSampler(len(self.sgd_val.labels))
-        return DataLoader(self.sgd_test, batch_size=self.batch_size)
+        sampler = StratifiedSampler(class_vector=self.sgd_test.labels, batch_size=self.batch_size)
+        return DataLoader(self.sgd_test, batch_size=self.batch_size, sampler=sampler)

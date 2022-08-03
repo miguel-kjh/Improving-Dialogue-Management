@@ -12,16 +12,12 @@ try:
 except Exception as e:
     print("Some Modules are Missing in MongoDB.py")
 
-DBNAME = "SGD"
-
-
-# TODO: add the possibility to save in different databases
 
 class MongoDB(InputService, OutputService):
 
-    def __init__(self):
-        self.dBName = DBNAME
-        self.client = MongoClient(LOCAL_SERVER)
+    def __init__(self, db_name: str, local_server: str):
+        self.dBName = db_name
+        self.client = MongoClient(local_server)
         self.DB = self.client[self.dBName]
 
     def load(self, path: str, to_pandas: bool = True) -> object:
@@ -40,12 +36,17 @@ class MongoDB(InputService, OutputService):
         if type(df) is pd.DataFrame:
             data = df.to_dict('records')
         else:
-            data = copy(df)
+            data = df
 
         if collection.count_documents({}) > 0:
             Logger.info("Dropping last data from Mongo DB Server .... ")
             collection.drop()
 
-        collection.insert_many(data, ordered=False)
+        try:
+            collection.insert_many(data, ordered=False)
+        except Exception as _:
+            for key, record in data.items():
+                record['Dialogue_id'] = key
+                collection.insert_one(record)
 
         Logger.info("All the Data has been Exported to Mongo DB Server .... ")

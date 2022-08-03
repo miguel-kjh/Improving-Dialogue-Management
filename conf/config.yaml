@@ -4,6 +4,6 @@ defaults:
   - dataset: sgd.yaml
   - model: ted.yaml
 resources:
-  gpus: 0
+  gpus: 1
   seed: 2020
   wandb: false
