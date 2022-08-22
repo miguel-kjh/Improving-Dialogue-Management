@@ -97,7 +97,7 @@ class TrainAndEvaluateService:
             gpus=self.configuration['resources']['gpus'],
             logger=wandb_logger,
             max_epochs=self.configuration['model']['epochs'],
-            callbacks=self.__get_callbacks()
+            #callbacks=self.__get_callbacks()
         )
 
         trainer.fit(model, data)

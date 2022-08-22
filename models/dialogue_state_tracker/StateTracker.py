@@ -125,12 +125,11 @@ class StateTracker:
                     window.get_stack()
                 )
                 last_action = copy(action)
-                last_slots = copy(row['Slots'])
                 for action in row[column_for_actions][1:]:
                     window.add(self._get_embedding(
                         [],
-                        intents,
-                        last_slots,
+                        [],
+                        row['Slots'],
                         slots,
                         last_action,
                         actions,
@@ -142,7 +141,7 @@ class StateTracker:
                         dialogue_state,
                         id_,
                         [],
-                        last_slots,
+                        row['Slots'],
                         last_action,
                         action,
                         row[column_for_actions],
@@ -169,7 +168,7 @@ def main():
         mx_history_length=max_history_length
     )
     print(len(df['State'][0]), len(df['State'][0][0]))
-    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
+    df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""

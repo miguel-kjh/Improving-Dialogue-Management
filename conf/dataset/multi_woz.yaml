@@ -3,4 +3,4 @@ DB_name: "multi_woz"
 domain: "TINY"
 intention: "Atomic Intent"
 action: "Atomic Action"
-max_history: 1
+max_history: 5

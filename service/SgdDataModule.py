@@ -98,14 +98,14 @@ class SgdDataModule(pl.LightningDataModule):
         )
 
     def train_dataloader(self):
-        sampler = StratifiedSampler(class_vector=self.sgd_train.labels, batch_size=self.batch_size)
-        return DataLoader(self.sgd_train, batch_size=self.batch_size, sampler=sampler)
+        #sampler = StratifiedSampler(class_vector=self.sgd_train.labels, batch_size=self.batch_size)
+        return DataLoader(self.sgd_train, batch_size=self.batch_size)
 
     def val_dataloader(self):
-        sampler = StratifiedSampler(class_vector=self.sgd_val.labels, batch_size=self.batch_size)
-        return DataLoader(self.sgd_val, batch_size=self.batch_size, sampler=sampler)
+        #sampler = StratifiedSampler(class_vector=self.sgd_val.labels, batch_size=self.batch_size)
+        return DataLoader(self.sgd_val, batch_size=self.batch_size)
 
     def test_dataloader(self):
         #sampler = SequentialSampler(len(self.sgd_val.labels))
-        sampler = StratifiedSampler(class_vector=self.sgd_test.labels, batch_size=self.batch_size)
-        return DataLoader(self.sgd_test, batch_size=self.batch_size, sampler=sampler)
+        #sampler = StratifiedSampler(class_vector=self.sgd_test.labels, batch_size=self.batch_size)
+        return DataLoader(self.sgd_test, batch_size=self.batch_size)

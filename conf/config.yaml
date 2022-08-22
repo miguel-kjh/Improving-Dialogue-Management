@@ -6,4 +6,4 @@ defaults:
 resources:
   gpus: 1
   seed: 2020
-  wandb: false
+  wandb: False
