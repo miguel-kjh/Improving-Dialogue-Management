@@ -3,12 +3,15 @@ import os
 import shutil
 
 import numpy as np
+import pandas as pd
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
 from tqdm import tqdm
 import wandb
 
 from sklearn.preprocessing import LabelEncoder
+
+from service.OutputCsvService import OutputCsvService
 from service.SgdDataModule import SgdDataModule
 
 from models.dialogue_state_tracker.StateTracker import StateTracker
@@ -33,8 +36,6 @@ class TrainAndEvaluateService:
         column_for_actions = self.configuration['dataset']['action']
         max_history_length = self.configuration['dataset']['max_history']
         dataset_name = f"{self.name}_{domain}"
-        file_dataset = f"{dataset_name}_state_tracker_{column_for_intentions}_{column_for_actions}_" \
-                       f"max_history={max_history_length}"
         self.name_experiment = f"{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
                                f"_{max_history_length}"
         #self.dataset = self.mongodb_service.load(file_dataset)
@@ -55,9 +56,11 @@ class TrainAndEvaluateService:
         self.actions = self.action_encoder.fit_transform(self.labels)
         self.num_classes = len(self.action_encoder.classes_)
         self.activate_wandb_logging = self.configuration['resources']['wandb']
-        """self.dataset.to_csv(
-            os.path.join("data", f"{file_dataset}.csv"), index=False
-        )"""
+        self.path_results = os.path.join(
+            "results",
+            self.name_experiment
+        )
+        self.output_csv_service = OutputCsvService()
 
     @staticmethod
     def _create_folder(path: str):
@@ -114,7 +117,8 @@ class TrainAndEvaluateService:
         for embedding in tqdm(embeddings, desc='Transforming embeddings'):
             embedding2key = str(embedding)
             if embedding2key not in embeddings_transformed.keys():
-                record_index = self.dataset[self.type_feature].to_list().index(embedding)
+                print(embedding)
+                record_index = self.dataset['State'].to_list().index(embedding)
                 embeddings_transformed[embedding2key] = record_index
             else:
                 record_index = embeddings_transformed[embedding2key]
@@ -144,7 +148,7 @@ class TrainAndEvaluateService:
     def _evaluate(self, trainer: pl.Trainer, data: SgdDataModule) -> None:
         trainer.test(datamodule=data)
         test_results = trainer.model.test_results
-        """self._update_test_results(test_results)
+        self._update_test_results(test_results)
 
         test_results = pd.DataFrame(test_results)
         Logger.info('Save results')
@@ -168,7 +172,7 @@ class TrainAndEvaluateService:
         self.output_csv_service.save(
             actions_results,
             actions_results_file
-        )"""
+        )
 
         if self.activate_wandb_logging:
             wandb.finish()

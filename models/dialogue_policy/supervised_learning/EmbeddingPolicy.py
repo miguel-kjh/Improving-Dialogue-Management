@@ -138,7 +138,7 @@ class EmbeddingPolicy(pl.LightningModule):
         self.log('test_f1', self.test_f1(y_hat, y))
 
         for index in range(0, len(y)):
-            self.test_results['Inputs'].append(batch[0][index].cpu().numpy()[0].tolist())
+            self.test_results['Inputs'].append(batch[0][index].cpu().numpy().tolist())
             self.test_results['Labels'].append(batch[1][index].cpu().numpy().tolist())
             self.test_results['Predictions'].append(y_hat[index].cpu().numpy().tolist())
             self.test_results['IsCorrect'].append(y_hat[index].cpu().numpy() == y[index].cpu().numpy())

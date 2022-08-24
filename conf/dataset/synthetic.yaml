@@ -1,0 +1,6 @@
+name: "synthetic_dialogues"
+DB_name: "synthetic_dialogues"
+domain: "ALL"
+intention: "Atomic Intent"
+action: "Atomic Action"
+max_history: 5

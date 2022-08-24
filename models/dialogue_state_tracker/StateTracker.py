@@ -154,8 +154,9 @@ class StateTracker:
 
 
 def main():
-    mongodb_service = MongoDB("multi_woz", "mongodb://localhost:27017")
-    df = mongodb_service.load("multi_woz_dataset_TINY")
+    mongodb_service = MongoDB("SGD", "mongodb://localhost:27017")
+    df = mongodb_service.load("SGD_dataset_TINY")
+    print(set(df['Type']))
     assert not df.empty, "Dataframe is empty"
     state_tracker = StateTracker()
     column_for_intentions = 'Atomic Intent'
