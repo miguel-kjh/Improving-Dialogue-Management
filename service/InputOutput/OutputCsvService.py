@@ -1,6 +1,6 @@
 import pandas as pd
 
-from .OutputService import OutputService
+from service.InputOutput.OutputService import OutputService
 
 
 class OutputCsvService(OutputService):

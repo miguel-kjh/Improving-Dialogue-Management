@@ -11,20 +11,20 @@ import wandb
 
 from sklearn.preprocessing import LabelEncoder
 
-from service.OutputCsvService import OutputCsvService
+from service.Pipeline import Pipeline
 from service.SgdDataModule import SgdDataModule
 
 from models.dialogue_state_tracker.StateTracker import StateTracker
 from models.dialogue_policy.supervised_learning.TedPolicy import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
-from service.MongoDB import MongoDB
+from service.InputOutput.MongoDB import MongoDB
 from view.Logger import Logger
 
 
-class TrainAndEvaluateService:
+class TrainAndEvaluateService(Pipeline):
 
-    def __init__(self, configuration: dict, create_states: bool = True):
+    def __init__(self, configuration: dict):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
         self.mongodb_service = MongoDB(configuration['dataset']['DB_name'], configuration['database'][0]['path'])
@@ -60,7 +60,10 @@ class TrainAndEvaluateService:
             "results",
             self.name_experiment
         )
-        self.output_csv_service = OutputCsvService()
+        self._create_folder(self.path_results)
+
+    def get_path_results(self) -> str:
+        return self.path_results
 
     @staticmethod
     def _create_folder(path: str):
@@ -111,23 +114,29 @@ class TrainAndEvaluateService:
         intentions = []
         slots = []
         pre_actions = []
+        dialogue_id = []
 
         embeddings_transformed = {}
 
         for embedding in tqdm(embeddings, desc='Transforming embeddings'):
             embedding2key = str(embedding)
             if embedding2key not in embeddings_transformed.keys():
-                print(embedding)
-                record_index = self.dataset['State'].to_list().index(embedding)
+                record_index = -1
+                for idx, state in enumerate(self.dataset['State'].to_list()):
+                    if np.array(embedding).all() == np.array(state).all():
+                        record_index = idx
+                        break
+                assert record_index > -1, "bab configurantion"
                 embeddings_transformed[embedding2key] = record_index
             else:
                 record_index = embeddings_transformed[embedding2key]
 
             intentions.append(self.dataset['Intention'][record_index])
-            slots.append(self.dataset['Slot'][record_index])
-            pre_actions.append(self.dataset['Prev_actions'][record_index])
+            slots.append(self.dataset['Slots'][record_index])
+            pre_actions.append(self.dataset['Prev_action'][record_index])
+            dialogue_id.append(self.dataset['Dialogue_ID'][record_index])
 
-        return intentions, slots, pre_actions
+        return intentions, slots, pre_actions, dialogue_id
 
     def _update_test_results(self, test_results: dict):
         test_results['Index'] = list(range(0, len(test_results['Predictions'])))
@@ -137,10 +146,11 @@ class TrainAndEvaluateService:
             self.action_encoder.inverse_transform(ranking)
             for ranking in test_results['Ranking']
         ]
-        intentions, slots, pre_actions = self._transform_binary_embeddings(test_results['Inputs'])
+        intentions, slots, pre_actions, dialogue_id = self._transform_binary_embeddings(test_results['Inputs'])
         test_results['Intentions'] = intentions
         test_results['Slots'] = slots
         test_results['Prev_actions'] = pre_actions
+        test_results['Dialogue_ID'] = dialogue_id
 
     def _update_actions_results(self, actions_results: dict):
         actions_results['Actions'] = self.action_encoder.inverse_transform(actions_results['Actions'])

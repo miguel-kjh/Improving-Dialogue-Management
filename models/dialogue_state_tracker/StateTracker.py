@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 
 from models.dialogue_state_tracker.WindowStack import WindowStack
-from service.MongoDB import MongoDB
+from service.InputOutput.MongoDB import MongoDB
 
 
 # TODO: add slots to the embeddings with actions only
