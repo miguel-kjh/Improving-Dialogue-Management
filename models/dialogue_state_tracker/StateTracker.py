@@ -150,7 +150,9 @@ class StateTracker:
                     )
                     last_action = copy(action)
 
-        return pd.DataFrame(dialogue_state)
+        df = pd.DataFrame(dialogue_state)
+        df['Index'] = df.index
+        return df
 
 
 def main():

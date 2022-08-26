@@ -1,4 +1,4 @@
-name: "synthetic_dialogues"
+name: "syn_initial_example_stories"
 DB_name: "synthetic_dialogues"
 domain: "ALL"
 intention: "Atomic Intent"

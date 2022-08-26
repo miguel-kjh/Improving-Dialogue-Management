@@ -1,5 +1,6 @@
 import os
 import pickle
+from abc import ABC
 
 import torch
 from typing import Optional, List
@@ -24,7 +25,7 @@ def listToTensor(data: List) -> torch.Tensor:
 class Dataset(torch.utils.data.Dataset):
     """Characterizes a dataset for PyTorch"""
 
-    def __init__(self, X, labels, set_labels):
+    def __init__(self, X, labels, set_labels, indexes_dataset):
         """Initialization"""
 
         assert len(X) == len(labels)
@@ -32,6 +33,7 @@ class Dataset(torch.utils.data.Dataset):
         self.labels = labels
         self.X = X
         self.set_labels = set_labels
+        self.indexes_dataset = indexes_dataset
 
     def __len__(self):
         """Denotes the total number of samples"""
@@ -45,10 +47,11 @@ class Dataset(torch.utils.data.Dataset):
         y = self.labels[index]
         set_y = self.set_labels[index]
         x = self.X[index]
-        return listToTensor(x), y, torch.tensor(set_y).T
+        real_index = self.indexes_dataset[index]
+        return listToTensor(x), y, torch.tensor(set_y).T, real_index
 
 
-class SgdDataModule(pl.LightningDataModule):
+class SgdDataModule(pl.LightningDataModule, ABC):
 
     def __init__(
             self,
@@ -61,6 +64,9 @@ class SgdDataModule(pl.LightningDataModule):
             test: np.array,
             label_test: np.array,
             set_labels_test: np.array,
+            train_indexes,
+            validation_indexes,
+            test_indexes,
             batch_size: int = 32
     ):
         super().__init__()
@@ -77,23 +83,29 @@ class SgdDataModule(pl.LightningDataModule):
         self.test = test
         self.label_test = label_test
         self.set_labels_test = set_labels_test
+        self.train_indexes = train_indexes
+        self.validation_indexes = validation_indexes
+        self.test_indexes = test_indexes
 
     def setup(self, stage: Optional[str] = None):
 
         self.sgd_train = Dataset(
             self.train,
             self.label_train,
-            self.set_labels_train
+            self.set_labels_train,
+            self.train_indexes
         )
         self.sgd_val = Dataset(
             self.val,
             self.label_val,
-            self.set_labels_val
+            self.set_labels_val,
+            self.validation_indexes
         )
         self.sgd_test = Dataset(
             self.test,
             self.label_test,
-            self.set_labels_test
+            self.set_labels_test,
+            self.test_indexes
         )
 
     def train_dataloader(self):

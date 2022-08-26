@@ -110,27 +110,13 @@ class TrainAndEvaluateService(Pipeline):
 
         return trainer
 
-    def _transform_binary_embeddings(self, embeddings: list) -> tuple:
+    def _transform_binary_embeddings(self, indexes: list) -> tuple:
         intentions = []
         slots = []
         pre_actions = []
         dialogue_id = []
 
-        embeddings_transformed = {}
-
-        for embedding in tqdm(embeddings, desc='Transforming embeddings'):
-            embedding2key = str(embedding)
-            if embedding2key not in embeddings_transformed.keys():
-                record_index = -1
-                for idx, state in enumerate(self.dataset['State'].to_list()):
-                    if np.array(embedding).all() == np.array(state).all():
-                        record_index = idx
-                        break
-                assert record_index > -1, "bab configurantion"
-                embeddings_transformed[embedding2key] = record_index
-            else:
-                record_index = embeddings_transformed[embedding2key]
-
+        for record_index in indexes:
             intentions.append(self.dataset['Intention'][record_index])
             slots.append(self.dataset['Slots'][record_index])
             pre_actions.append(self.dataset['Prev_action'][record_index])
@@ -139,14 +125,13 @@ class TrainAndEvaluateService(Pipeline):
         return intentions, slots, pre_actions, dialogue_id
 
     def _update_test_results(self, test_results: dict):
-        test_results['Index'] = list(range(0, len(test_results['Predictions'])))
         test_results['Predictions'] = self.action_encoder.inverse_transform(test_results['Predictions'])
         test_results['Labels'] = self.action_encoder.inverse_transform(test_results['Labels'])
         test_results['Ranking'] = [
             self.action_encoder.inverse_transform(ranking)
             for ranking in test_results['Ranking']
         ]
-        intentions, slots, pre_actions, dialogue_id = self._transform_binary_embeddings(test_results['Inputs'])
+        intentions, slots, pre_actions, dialogue_id = self._transform_binary_embeddings(test_results['Index'])
         test_results['Intentions'] = intentions
         test_results['Slots'] = slots
         test_results['Prev_actions'] = pre_actions
@@ -189,6 +174,7 @@ class TrainAndEvaluateService(Pipeline):
 
     def _get_samples_by_dataset(self, type_data: str) -> tuple:
         dataset = self.dataset[self.dataset['Type'] == type_data]
+        indexes = dataset['Index'].to_list()
         labels = self.action_encoder.transform(dataset['Label'])
         set_labels = [
             list(set(self.action_encoder.transform(actions)))
@@ -201,13 +187,14 @@ class TrainAndEvaluateService(Pipeline):
         ]
         features = np.array(dataset['State'].to_list())
 
-        assert len(features) == len(labels) == len(set_labels), \
+        assert len(indexes) == len(features) == len(labels) == len(set_labels), \
             f"Bab dimension of features: {len(features)} - " \
-            f"labels : {len(labels)} - set_labels: {len(set_labels)} "
+            f"labels : {len(labels)} - set_labels: {len(set_labels)} " \
+            f"index: {len(indexes)}"
         numbers = [len(set_label) for set_label in set_labels]
         assert max(numbers) == min(numbers), "Bab dimension of set_labels"
 
-        return features, labels, set_labels
+        return features, labels, set_labels, indexes
 
     def process(self):
         n_features = self.embeddings[0].shape[1]
@@ -220,9 +207,9 @@ class TrainAndEvaluateService(Pipeline):
             self.num_classes
         )
 
-        train, train_labels, set_train_labels = self._get_samples_by_dataset('train')
-        validation, validation_labels, set_validation_labels = self._get_samples_by_dataset('dev')
-        test, test_labels, set_test_labels = self._get_samples_by_dataset('test')
+        train, train_labels, set_train_labels, train_indexes = self._get_samples_by_dataset('train')
+        validation, validation_labels, set_validation_labels, validation_indexes = self._get_samples_by_dataset('dev')
+        test, test_labels, set_test_labels, test_indexes = self._get_samples_by_dataset('test')
 
         sgd_module = SgdDataModule(
             train,
@@ -234,6 +221,9 @@ class TrainAndEvaluateService(Pipeline):
             test,
             test_labels,
             set_test_labels,
+            train_indexes,
+            validation_indexes,
+            test_indexes,
             batch_size=self.configuration['model']['batch_size']
         )
 

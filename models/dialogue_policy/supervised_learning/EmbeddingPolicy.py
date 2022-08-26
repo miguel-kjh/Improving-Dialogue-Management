@@ -55,6 +55,7 @@ class EmbeddingPolicy(pl.LightningModule):
         self.conf_matrix = get_metrics(n_actions)
 
         self.test_results = {
+            'Index': [],
             'Inputs': [],
             'Embeddings': [],
             'Labels': [],
@@ -89,7 +90,7 @@ class EmbeddingPolicy(pl.LightningModule):
         return x, y, mask
 
     def _train_prediction(self, batch):
-        x, y, _ = batch
+        x, y, _, _ = batch
         y_to_dense = torch.tensor([self.actions_one_hot[i] for i in y], device=self.device)
         all_label = torch.tensor(self.actions_one_hot, device=self.device)
         x_hat, y_hat, mask = self(x, y_to_dense)  # forward
@@ -106,7 +107,7 @@ class EmbeddingPolicy(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         loss = self._train_prediction(batch)
         y_hat, _ = self.predict_step(batch, batch_idx)
-        _, y, y_set = batch
+        _, y, y_set, _ = batch
         self.log('loss', loss, prog_bar=True)
         self.log('acc', self.train_acc(y_hat, y), prog_bar=True)
         self.log('acc_sets', self.train_mAP(y_hat, y_set), prog_bar=True)
@@ -118,7 +119,7 @@ class EmbeddingPolicy(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         loss = self._train_prediction(batch)
         y_hat, _ = self.predict_step(batch, batch_idx)
-        _, y, y_set = batch
+        _, y, y_set, _ = batch
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_acc', self.valid_acc(y_hat, y), prog_bar=True)
         self.log('val_sets', self.valid_mAP(y_hat, y_set), prog_bar=True)
@@ -129,7 +130,7 @@ class EmbeddingPolicy(pl.LightningModule):
     def test_step(self, batch, batch_idx):
 
         y_hat, ranking = self.predict_step(batch, batch_idx, is_test=True)
-        _, y, y_set = batch
+        _, y, y_set, _ = batch
 
         self.log('test_acc', self.test_acc(y_hat, y))
         self.log('test_sets', self.test_mAP(y_hat, y_set))
@@ -162,7 +163,7 @@ class EmbeddingPolicy(pl.LightningModule):
             )
 
     def predict_step(self, batch, batch_idx: int, dataloader_idx: Optional[int] = None, is_test: bool = False):
-        x, _, _ = batch
+        x, _, _, idx = batch
         y = torch.tensor([self.actions_one_hot] * x.size(0), device=self.device)
         x, _ = self._make_a_transformation(x)
         x = self.dense_transformer(x)
@@ -175,6 +176,7 @@ class EmbeddingPolicy(pl.LightningModule):
         actions = ranking.argmax(dim=1)
         if is_test:
             for index in range(0, len(x)):
+                self.test_results['Index'].append(idx[index].item())
                 self.test_results['Embeddings'].append(x[index].cpu().numpy().tolist())
 
             if not self.actions_results['Embeddings']:
