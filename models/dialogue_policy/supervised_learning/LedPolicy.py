@@ -11,6 +11,8 @@ class Led(EmbeddingPolicy, ABC):
     def __init__(self, config: dict, n_actions: int):
         super().__init__(config, n_actions)
 
+        print(self.num_features)
+
         self.model = nn.LSTM(input_size=self.num_features,
                              hidden_size=self.hparams.hidden_size,
                              num_layers=self.hparams.num_layers,

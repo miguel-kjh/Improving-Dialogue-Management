@@ -36,7 +36,8 @@ class TrainAndEvaluateService(Pipeline):
         column_for_actions = self.configuration['dataset']['action']
         max_history_length = self.configuration['dataset']['max_history']
         dataset_name = f"{self.name}_{domain}"
-        self.name_experiment = f"{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
+        model = self.configuration['model']['name']
+        self.name_experiment = f"{model}_{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
                                f"_{max_history_length}"
         #self.dataset = self.mongodb_service.load(file_dataset)
         Logger.info("Create new dataset with that configuration")
