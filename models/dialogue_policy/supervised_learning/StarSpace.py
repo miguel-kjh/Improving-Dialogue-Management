@@ -42,22 +42,31 @@ class StarSpace(nn.Module):
 
 
 if __name__ == '__main__':
-
     # transformer output
     lhs = torch.tensor(
         [
             [1, 2, 3, 4, 5],
             [1, 2, 3, 2, 3],
-            [1, 2, 3, 4, 22]
+            [1, 2, 3, 4, 22],
+            [1, 3, -4, 5, 6]
         ]
         , dtype=torch.float32
     )
-    rhs = torch.tensor([[0, 1, 1], [0, 0, 0], [0, 1, 0]], dtype=torch.float32)
+    rhs = torch.tensor([
+        [0, 1, 1],
+        [0, 0, 0],
+        [0, 1, 0],
+        [1, 0, 0]
+    ],
+        dtype=torch.float32
+    )
 
     n_lhs = lhs.size(1)
     n_rhs = rhs.size(1)
+    print("lhs:", lhs.size())
+    print("rhs:", rhs.size())
     d_emb = 20
-    batch_size = 3
+    batch_size = 4
 
     model = StarSpace(d_emb)
     criterion = MarginRankingLoss(margin=1., aggregate=torch.mean)
@@ -69,8 +78,6 @@ if __name__ == '__main__':
     n_samples = batch_size * n_negative
     neg_sampling = NegativeSampling(n_output=batch_size, n_negative=n_negative)
     neg_rhs = neg_sampling.sample(n_samples)
-    if lhs.is_cuda:
-        neg_rhs = neg_rhs.cuda()
     # get negative samples of rhs
     neg_rhs_emb = torch.index_select(rhs, 0, neg_rhs)
     _, neg_rhs_repr = model(output=neg_rhs_emb)  # (B * n_negative) x dim
@@ -101,17 +108,17 @@ if __name__ == '__main__':
         [1, 2, 3, 4, 22]
     ], dtype=torch.float32)
     test_lhs_repr, test_candidate_rhs_repr = model(
-        lhs,
+        test_rhs,
         test_candidate_rhs
     )
     # B x n_output x dim
-    print("test_lhs_repr", test_candidate_rhs_repr.size())
-    #test_candidate_rhs_repr = test_candidate_rhs_repr.view(batch_size, n_hrs, 20)
+    print("test_candidate_rhs_repr", test_candidate_rhs_repr.size())
+    # test_candidate_rhs_repr = test_candidate_rhs_repr.view(batch_size, n_hrs, 20)
     test_candidate_rhs_repr = test_candidate_rhs_repr.T
     test_candidate_rhs_repr = test_candidate_rhs_repr.unsqueeze(2)
     test_candidate_rhs_repr = test_candidate_rhs_repr.expand(d_emb, n_hrs, batch_size)
     test_candidate_rhs_repr = test_candidate_rhs_repr.T
-    print("test_lhs_repr", test_candidate_rhs_repr.size())
+    print("test_candidate_rhs_repr", test_candidate_rhs_repr.size())
     similarity = sim(test_lhs_repr, test_candidate_rhs_repr).squeeze(1)  # B x n_output
     print(similarity)
     res = torch.max(similarity, dim=-1)[1].data

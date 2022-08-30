@@ -8,6 +8,7 @@ import pytorch_lightning as pl
 import torch.nn as nn
 
 from models.dialogue_policy.loss.InnerProductSimilarity import InnerProductSimilarity
+from models.dialogue_policy.loss.MarginRankingLoss import MarginRankingLoss
 from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
 from models.dialogue_policy.supervised_learning.TedPolicy import get_tgt_mask
 from models.transformation.NegativeSampling import NegativeSampling
@@ -15,10 +16,10 @@ from utils.ted_utils import get_metrics, create_ffn_layer, create_embedding_laye
 from models.dialogue_policy.supervised_learning.StarSpace import StarSpace
 
 
-class StartSpacePolicy(pl.LightningModule):
+class StarSpacePolicy(pl.LightningModule):
 
     def __init__(self, config: dict, n_actions: int):
-        super(StartSpacePolicy, self).__init__()
+        super(StarSpacePolicy, self).__init__()
         self.save_hyperparameters(config)
 
         self.num_features = self.hparams.hidden_layers_sizes_pre_dial[-1][-1] \
@@ -61,6 +62,8 @@ class StartSpacePolicy(pl.LightningModule):
         self.start_space = StarSpace(self.hparams.embedding_space)
 
         self.similarity = InnerProductSimilarity()
+
+        self.criterion = MarginRankingLoss(margin=1., aggregate=torch.mean)
 
         def get_one_hot_action(index: int):
             action = np.zeros(n_actions)
@@ -115,12 +118,19 @@ class StartSpacePolicy(pl.LightningModule):
         return x, mask
 
     def forward(self, x, y):
+        print(x.size(), y.size())
         x, mask = self._make_a_transformation(x)
+        print(x.size(), y.size())
         x, y = self.start_space(x, y)
+        print(x.size(), y.size())
+        exit()
         return x, y, mask
 
     def _train_prediction(self, batch):
         x, y, _, _ = batch
+        print(x.size(), y.size())
+        y = y.type(torch.float32)
+        y = y.unsqueeze(1).T
         x_repr, y_repr, _ = self(x, y)
         positive_similarity = self.similarity(x_repr, y_repr)
 
@@ -131,7 +141,9 @@ class StartSpacePolicy(pl.LightningModule):
         )
         neg_y = neg_sampling.sample(n_samples)
         neg_y_emb = torch.index_select(y, 0, neg_y)
+        print(neg_y_emb.shape)
         _, neg_y_repr = self.start_space(output=neg_y_emb)  # (B * n_negative) x dim
+        print(neg_y_emb.shape)
         neg_y_repr = neg_y_repr.view(self.hparams.batch_size, self.hparams.num_neg, -1)  # B x n_negative x dim
         negative_similarity = self.similarity(x_repr, neg_y_repr).squeeze(1)
 
@@ -197,7 +209,9 @@ class StartSpacePolicy(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx: int, dataloader_idx: Optional[int] = None, is_test: bool = False):
         x, _, _, idx = batch
-        y = torch.tensor([self.actions_one_hot] * x.size(0), device=self.device)
+        y = torch.tensor(self.actions_one_hot, device=self.device)
+        print(y.shape)
+        print(y)
         x_repr, y_repr, _ = self(x, y)
         n_actions = y_repr.size(0)
 
