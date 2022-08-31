@@ -8,8 +8,10 @@ import pytorch_lightning as pl
 import torch.nn as nn
 import torch.nn.functional as F
 
+from models.dialogue_policy.loss.CosineSimilarity import CosineSimilarity
 from models.dialogue_policy.loss.InnerProductSimilarity import InnerProductSimilarity
 from models.dialogue_policy.loss.MarginRankingLoss import MarginRankingLoss
+from models.dialogue_policy.loss.ScaleCosineLoss import ScaleCosineLoss
 from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
 from models.dialogue_policy.supervised_learning.TedPolicy import get_tgt_mask
 from models.transformation.NegativeSampling import NegativeSampling
@@ -65,9 +67,9 @@ class StarSpacePolicy(pl.LightningModule):
 
         self.start_space = StarSpace(self.hparams.embedding_space)
 
-        self.similarity = InnerProductSimilarity()
+        self.similarity = CosineSimilarity() if self.hparams.similarity == 'cosine' else InnerProductSimilarity()
 
-        self.criterion = MarginRankingLoss(margin=1., aggregate=torch.mean)
+        self.criterion = ScaleCosineLoss() if self.hparams.loss == 'dot' else MarginRankingLoss()
 
         self.train_acc, self.train_precision, self.train_recall, self.train_f1, self.train_mAP, \
         self.valid_acc, self.valid_precision, self.valid_recall, self.valid_f1, self.valid_mAP, \
@@ -197,7 +199,7 @@ class StarSpacePolicy(pl.LightningModule):
         if is_test:
             for index in range(0, len(x)):
                 self.test_results['Index'].append(idx[index].item())
-                self.test_results['Embeddings'].append(x[index].cpu().numpy().tolist())
+                self.test_results['Embeddings'].append(x_repr[index].cpu().numpy().tolist())
 
             if not self.actions_results['Embeddings']:
                 self.actions_results['Embeddings'] = y_repr.cpu().numpy().tolist()[0]
