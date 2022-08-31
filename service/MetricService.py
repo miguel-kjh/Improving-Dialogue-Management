@@ -28,8 +28,7 @@ class MetricService(Pipeline):
         self.path = path
         self.embeddings_file = os.path.join(self.path, 'embeddings.csv')
         self.actions_file = os.path.join(self.path, 'actions.csv')
-        self.columns_for_embeddings = ['Inputs', 'Embeddings', 'Ranking',
-                                       'Ranking_similarity', 'Intentions', 'Slots']
+        self.columns_for_embeddings = ['Inputs', 'Embeddings', 'Ranking', 'Intentions', 'Slots']
         self.columns_for_actions = ['Inputs', 'Embeddings']
         self.latent_space_name = 'latent_space'
 

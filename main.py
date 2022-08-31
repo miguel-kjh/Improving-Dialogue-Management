@@ -26,8 +26,8 @@ def main(cfg: DictConfig) -> None:
     train_and_evaluate_service = TrainAndEvaluateService(cfg)
     train_and_evaluate_service.process()
 
-    metrics_service = MetricService(train_and_evaluate_service.get_path_results())
-    metrics_service.process()
+    """metrics_service = MetricService(train_and_evaluate_service.get_path_results())
+    metrics_service.process()"""
 
 
 if __name__ == "__main__":

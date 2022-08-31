@@ -9,7 +9,8 @@ from pytorch_lightning.loggers import WandbLogger
 from tqdm import tqdm
 import wandb
 
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from typing import List
 
 from service.Pipeline import Pipeline
 from service.SgdDataModule import SgdDataModule
@@ -56,6 +57,9 @@ class TrainAndEvaluateService(Pipeline):
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
         self.actions = self.action_encoder.fit_transform(self.labels)
+        self.class_actions = sorted(list(set(self.actions)))
+        self.actions_one_hot_encoder = OneHotEncoder(sparse=False)
+        self.actions_one_hot_encoder.fit(self.actions.reshape(-1, 1))
         self.num_classes = len(self.action_encoder.classes_)
         self.activate_wandb_logging = self.configuration['resources']['wandb']
         self.path_results = os.path.join(
@@ -77,14 +81,16 @@ class TrainAndEvaluateService(Pipeline):
         os.makedirs(path)
 
     @staticmethod
-    def get_model(model: str, config: dict, num_actions: int) -> pl.LightningModule:
+    def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
         models = {
             "TED": Ted,
             "LED": Led,
             "SS": StarSpacePolicy
         }
 
-        return models[model](config, num_actions)
+        print(actions)
+
+        return models[model](config, actions)
 
     @staticmethod
     def __get_callbacks() -> list:
@@ -207,7 +213,7 @@ class TrainAndEvaluateService(Pipeline):
         model = self.get_model(
             self.configuration['model']['name'],
             self.configuration['model'],
-            self.num_classes
+            self.class_actions
         )
 
         train, train_labels, set_train_labels, train_indexes = self._get_samples_by_dataset('train')
