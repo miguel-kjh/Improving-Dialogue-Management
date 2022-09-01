@@ -1,7 +1,7 @@
 import torch
 
 
-class NegativeSampling():
+class NegativeSampling:
     def __init__(self, n_output, n_negative=5, weights=None):
         super(NegativeSampling, self).__init__()
         assert n_output >= n_negative, "n_output lower than n_negative"

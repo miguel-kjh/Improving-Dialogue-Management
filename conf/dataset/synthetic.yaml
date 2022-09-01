@@ -1,6 +1,6 @@
 name: "syn_initial_example_stories"
 DB_name: "synthetic_dialogues"
 domain: "ALL"
-intention: "Atomic Intent"
-action: "Atomic Action"
+intention: "Intention"
+action: "Action"
 max_history: 5

@@ -120,7 +120,6 @@ class Metrics:
         cm = confusion_matrix(real_labels, predictions)
         system_actions = list(set(predictions + real_labels))
         system_actions.sort()
-        system_actions = LabelEncoder().fit_transform(system_actions)
         fig = px.imshow(
             cm,
             labels=dict(x="Label", y="Predict", color="Hits"),

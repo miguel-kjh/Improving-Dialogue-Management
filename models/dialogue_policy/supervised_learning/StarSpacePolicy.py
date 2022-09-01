@@ -130,6 +130,7 @@ class StarSpacePolicy(pl.LightningModule):
             n_negative=self.hparams.num_neg
         )
         neg_y = neg_sampling.sample(n_samples)
+        neg_y = neg_y.to(self.device)
         neg_y_emb = F.one_hot(neg_y, self.n_actions).float()
         _, neg_y_repr = self.start_space(output=neg_y_emb)  # (B * n_negative) x dim
         neg_y_repr = neg_y_repr.view(batch_size, self.hparams.num_neg, -1)  # B x n_negative x dim
@@ -181,7 +182,7 @@ class StarSpacePolicy(pl.LightningModule):
     def predict_step(self, batch, batch_idx: int, dataloader_idx: Optional[int] = None, is_test: bool = False):
         x, _, _, idx = batch
         batch_size = x.size(0)
-        x_repr, y_repr, _ = self(x, self.actions_one_hot)
+        x_repr, y_repr, _ = self(x, self.actions_one_hot.to(self.device))
         n_actions = y_repr.size(0)
 
         y_repr = y_repr.T
