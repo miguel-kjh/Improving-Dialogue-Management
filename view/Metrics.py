@@ -129,4 +129,5 @@ class Metrics:
             text_auto=True,
             aspect="auto"
         )
+
         return fig
