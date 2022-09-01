@@ -3,6 +3,7 @@ from abc import ABC
 
 import torch
 from torch import nn as nn
+from typing import List
 
 from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
 from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
@@ -27,8 +28,8 @@ def get_tgt_mask(size) -> torch.tensor:
 
 class Ted(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, n_actions: int):
-        super().__init__(config, n_actions)
+    def __init__(self, config: dict, actions: List[int]):
+        super().__init__(config, actions)
 
         self.pos_encoder = PositionalEncoding(
             self.hparams.encoding_dimension,

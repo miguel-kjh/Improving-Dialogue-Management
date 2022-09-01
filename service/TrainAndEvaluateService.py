@@ -87,9 +87,6 @@ class TrainAndEvaluateService(Pipeline):
             "LED": Led,
             "SS": StarSpacePolicy
         }
-
-        print(actions)
-
         return models[model](config, actions)
 
     @staticmethod

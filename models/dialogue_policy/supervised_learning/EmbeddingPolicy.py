@@ -12,9 +12,11 @@ from models.dialogue_policy.loss.DotProductLoss import SingleLabelDotProductLoss
 
 class EmbeddingPolicy(pl.LightningModule):
 
-    def __init__(self, config: dict, n_actions: int):
+    def __init__(self, config: dict, actions: List[int]):
         super(EmbeddingPolicy, self).__init__()
         self.save_hyperparameters(config)
+
+        self.n_actions = len(actions)
 
         self.num_features = self.hparams.hidden_layers_sizes_pre_dial[-1][-1] \
             if self.hparams.hidden_layers_sizes_pre_dial else self.hparams.n_features
@@ -33,26 +35,26 @@ class EmbeddingPolicy(pl.LightningModule):
 
         self.dense_action = nn.Sequential(
             create_ffn_layer(self.hparams.hidden_layers_sizes_bot, self.hparams.regularization_constant),
-            create_embedding_layer(n_actions, self.hparams.embedding_space,
+            create_embedding_layer(self.n_actions, self.hparams.embedding_space,
                                    self.hparams.dropout_action, self.hparams.regularization_constant)
         )
 
         self.similarity_function = SingleLabelDotProductLoss(self.hparams.num_neg, self.device)
 
         def get_one_hot_action(index: int):
-            action = np.zeros(n_actions)
+            action = np.zeros(self.n_actions)
             action[len(action) - index - 1] = 1
             return action.astype(np.float32)
 
-        self.actions_one_hot = [get_one_hot_action(index) for index in range(0, n_actions)]
-        self.labels = torch.tensor([[index] for index in range(0, n_actions)], device=self.device)
+        self.actions_one_hot = [get_one_hot_action(index) for index in range(0, self.n_actions)]
+        self.labels = torch.tensor([[index] for index in range(0, self.n_actions)], device=self.device)
 
-        self.final_confusion_matrix = torch.zeros(n_actions, n_actions, device=self.device)
+        self.final_confusion_matrix = torch.zeros(self.n_actions, self.n_actions, device=self.device)
 
         self.train_acc, self.train_precision, self.train_recall, self.train_f1, self.train_mAP, \
         self.valid_acc, self.valid_precision, self.valid_recall, self.valid_f1, self.valid_mAP, \
         self.test_acc, self.test_precision, self.test_recall, self.test_f1, self.test_mAP, \
-        self.conf_matrix = get_metrics(n_actions)
+        self.conf_matrix = get_metrics(self.n_actions)
 
         self.test_results = {
             'Index': [],
@@ -67,7 +69,7 @@ class EmbeddingPolicy(pl.LightningModule):
         }
 
         self.actions_results = {
-            'Actions': [index for index in range(0, n_actions)],
+            'Actions': [index for index in range(0, self.n_actions)],
             'Inputs': copy(self.actions_one_hot),
             'Embeddings': [],
         }

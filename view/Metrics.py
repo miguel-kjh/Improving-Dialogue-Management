@@ -1,11 +1,13 @@
 from abc import abstractmethod
 
+import numpy as np
 import pandas as pd
 import plotly.express as px
 from plotly.graph_objs import Figure
 from sklearn.manifold import TSNE
 from typing import Tuple
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import LabelEncoder
 
 
 def _plot_figure(data: pd.DataFrame, actions_dict: dict) -> Tuple[Figure, Figure]:
@@ -39,6 +41,27 @@ def _plot_figure(data: pd.DataFrame, actions_dict: dict) -> Tuple[Figure, Figure
     return fig1, fig2
 
 
+def _error_management(
+        n_components: int,
+        perplexity: int,
+        features: list,
+        predictions: list,
+        real_labels: list,
+        is_correct_labels: list,
+        intentions: list,
+        slots: list,
+        prev_actions: list,
+):
+    assert n_components in [2, 3], "n_components must be 2 or 3"
+    assert perplexity > 0, "perplexity must be greater than 0"
+    assert len(features) == len(predictions), "features and predictions must be the same length"
+    assert len(features) == len(real_labels), "features and real_labels must be the same length"
+    assert len(features) == len(is_correct_labels), "features and is_correct_labels must be the same length"
+    assert len(features) == len(intentions), "features and intentions must be the same length"
+    assert len(features) == len(slots), "features and slots must be the same length"
+    assert len(features) == len(prev_actions), "features and prev_actions must be the same length"
+
+
 class Metrics:
 
     @abstractmethod
@@ -57,14 +80,17 @@ class Metrics:
             random_state=42
     ) -> Tuple[Figure, Figure]:
 
-        assert n_components in [2, 3], "n_components must be 2 or 3"
-        assert perplexity > 0, "perplexity must be greater than 0"
-        assert len(features) == len(predictions), "features and predictions must be the same length"
-        assert len(features) == len(real_labels), "features and real_labels must be the same length"
-        assert len(features) == len(is_correct_labels), "features and is_correct_labels must be the same length"
-        assert len(features) == len(intentions), "features and intentions must be the same length"
-        assert len(features) == len(slots), "features and slots must be the same length"
-        assert len(features) == len(prev_actions), "features and prev_actions must be the same length"
+        _error_management(
+            n_components=n_components,
+            perplexity=perplexity,
+            features=features,
+            predictions=predictions,
+            real_labels=real_labels,
+            is_correct_labels=is_correct_labels,
+            intentions=intentions,
+            slots=slots,
+            prev_actions=prev_actions,
+        )
 
         model = TSNE(n_components=n_components, random_state=random_state, perplexity=perplexity)
 
@@ -91,10 +117,10 @@ class Metrics:
             predictions: list,
             real_labels: list
     ) -> Figure:
-
         cm = confusion_matrix(real_labels, predictions)
         system_actions = list(set(predictions + real_labels))
         system_actions.sort()
+        system_actions = LabelEncoder().fit_transform(system_actions)
         fig = px.imshow(
             cm,
             labels=dict(x="Label", y="Predict", color="Hits"),
