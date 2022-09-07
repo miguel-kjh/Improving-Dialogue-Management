@@ -5,7 +5,7 @@ class WindowStack:
 
     def __init__(self, window_size: int, features_dim: int):
         self.window_size = window_size
-        self.stack = [np.zeros(features_dim) for _ in range(window_size)]
+        self.stack = [np.zeros(features_dim).tolist() for _ in range(window_size)]
 
     def add(self, element: np.array) -> None:
         if len(self.stack) >= self.window_size:

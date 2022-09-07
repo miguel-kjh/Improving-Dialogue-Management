@@ -57,7 +57,8 @@ class MetricService(Pipeline):
         Logger.info("Confusion matrix")
         cm = Metrics.plot_confusion_matrix(
             pd_df['Labels'].to_list(),
-            pd_df['Predictions'].to_list()
+            pd_df['Predictions'].to_list(),
+            title=os.path.basename(self.path)
         )
         filename = self.embeddings_file.replace('.csv', '_confusion_matrix.jpg')
         self.output_jpg_service.save(cm, filename)

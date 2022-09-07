@@ -44,12 +44,13 @@ class RseStateTracker(StateTracker):
         for intent in intention:
             intention_embedding[intentions.index(intent)] = 1
 
-        mandatory_slot_embedding = np.zeros(len_mandatory_slots)
+        mandatory_slot_embedding = np.ones(len_mandatory_slots*2)
+        mandatory_slot_embedding[::2] = 0
         for slot_ in mandatory_slot:
-            mandatory_slot_embedding[mandatory_slots.index(slot_)] = 1
-        optional_slot_embedding = np.zeros(len_optional_slots)
+            mandatory_slot_embedding[mandatory_slots.index(slot_)*2] = 1
+        optional_slot_embedding = np.zeros(len_optional_slots*2)
         for slot_ in optional_slot:
-            optional_slot_embedding[optional_slots.index(slot_)] = 1
+            optional_slot_embedding[optional_slots.index(slot_)*2] = 1
 
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
@@ -147,6 +148,7 @@ class RseStateTracker(StateTracker):
 
         df = pd.DataFrame(dialogue_state)
         df['Index'] = df.index
+        print(df['State'].values[0])
         return df
 
 
@@ -157,16 +159,18 @@ def main():
     state_tracker = RseStateTracker()
     column_for_intentions = 'Atomic Intent'
     column_for_actions = 'Action'
-    max_history_length = 5
+    max_history_length = 2
     df = state_tracker.get_state_and_actions(
         df,
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions,
         mx_history_length=max_history_length
     )
-    print(len(df['State'][0]), len(df['State'][0][0]))
-    print(df.head(10))
-    #df.to_csv('state_tracker.csv', index=False)
+    #encuentra un estado que no tenga la misma shape
+    df['State'] = df['State'].apply(lambda x: np.array(x))
+    embeddings = np.array(df['State'].tolist())
+    print(embeddings.shape)
+#    df.to_csv('state_tracker.csv', index=False)
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""

@@ -115,7 +115,8 @@ class Metrics:
     @abstractmethod
     def plot_confusion_matrix(
             predictions: list,
-            real_labels: list
+            real_labels: list,
+            title: str = "Confusion Matrix",
     ) -> Figure:
         cm = confusion_matrix(real_labels, predictions)
         system_actions = list(set(predictions + real_labels))
@@ -128,5 +129,6 @@ class Metrics:
             text_auto=True,
             aspect="auto"
         )
+        fig.update_layout(title=title)
 
         return fig

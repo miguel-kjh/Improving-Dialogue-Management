@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
 from pytorch_lightning.loggers import WandbLogger
-from tqdm import tqdm
 import wandb
 
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
@@ -16,6 +15,7 @@ from service.Pipeline import Pipeline
 from service.SgdDataModule import SgdDataModule
 
 from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
+from models.dialogue_state_tracker.RseStateTracker import RseStateTracker
 from models.dialogue_policy.supervised_learning.TedPolicy import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -30,7 +30,14 @@ class TrainAndEvaluateService(Pipeline):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
         self.mongodb_service = MongoDB(configuration['dataset']['DB_name'], configuration['database'][0]['path'])
-        self.state_tracker = BinaryStateTracker()
+        self.state_tracker = None
+        embedding_type = self.configuration['model']['embedding_type']
+        if embedding_type == 'binary':
+            self.state_tracker = BinaryStateTracker()
+        elif embedding_type == 'rse':
+            self.state_tracker = RseStateTracker()
+        else:
+            raise ValueError(f'Unknown embedding type: {embedding_type}')
 
         self.name = self.configuration['dataset']['name']
         domain = self.configuration['dataset']['domain']
@@ -40,7 +47,7 @@ class TrainAndEvaluateService(Pipeline):
         dataset_name = f"{self.name}_{domain}"
         model = self.configuration['model']['name']
         self.name_experiment = f"{model}_{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
-                               f"_{max_history_length}"
+                               f"_{max_history_length}_{embedding_type}"
         #self.dataset = self.mongodb_service.load(file_dataset)
         Logger.info("Create new dataset with that configuration")
         df = self.mongodb_service.load(dataset_name)
@@ -54,6 +61,9 @@ class TrainAndEvaluateService(Pipeline):
         )
         #self.mongodb_service.save(self.dataset, file_dataset)
         self.embeddings = np.array(self.dataset['State'].tolist())
+        Logger.info(f"Embeddings shape: {self.embeddings.shape}")
+        Logger.info(f"Embeddings: {self.embeddings}")
+        exit()
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
         self.actions = self.action_encoder.fit_transform(self.labels)
