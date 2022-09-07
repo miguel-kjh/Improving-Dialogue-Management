@@ -15,7 +15,7 @@ from typing import List
 from service.Pipeline import Pipeline
 from service.SgdDataModule import SgdDataModule
 
-from models.dialogue_state_tracker.StateTracker import StateTracker
+from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
 from models.dialogue_policy.supervised_learning.TedPolicy import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
@@ -30,7 +30,7 @@ class TrainAndEvaluateService(Pipeline):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
         self.mongodb_service = MongoDB(configuration['dataset']['DB_name'], configuration['database'][0]['path'])
-        self.state_tracker = StateTracker()
+        self.state_tracker = BinaryStateTracker()
 
         self.name = self.configuration['dataset']['name']
         domain = self.configuration['dataset']['domain']
