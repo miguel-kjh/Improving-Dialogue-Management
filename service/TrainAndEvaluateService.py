@@ -59,11 +59,7 @@ class TrainAndEvaluateService(Pipeline):
             column_for_actions=column_for_actions,
             mx_history_length=max_history_length
         )
-        #self.mongodb_service.save(self.dataset, file_dataset)
         self.embeddings = np.array(self.dataset['State'].tolist())
-        Logger.info(f"Embeddings shape: {self.embeddings.shape}")
-        Logger.info(f"Embeddings: {self.embeddings}")
-        exit()
         self.labels = self.dataset['Label'].tolist()
         self.action_encoder = LabelEncoder()
         self.actions = self.action_encoder.fit_transform(self.labels)

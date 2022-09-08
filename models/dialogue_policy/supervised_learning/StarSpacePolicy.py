@@ -2,7 +2,6 @@ import abc
 import math
 from copy import copy
 from typing import Optional, List, Dict
-import numpy as np
 import torch
 import pytorch_lightning as pl
 import torch.nn as nn
@@ -144,10 +143,9 @@ class StarSpacePolicy(pl.LightningModule):
         _, y, y_set, _ = batch
         self.log('loss', loss, prog_bar=True)
         self.log('acc', self.train_acc(y_hat, y), prog_bar=True)
-        self.log('acc_sets', self.train_mAP(y_hat, y_set), prog_bar=True)
+        self.log('f1', self.train_f1(y_hat, y), prog_bar=True)
         self.log('precision', self.train_precision(y_hat, y), prog_bar=True)
         self.log('recall', self.train_recall(y_hat, y), prog_bar=True)
-        self.log('f1', self.train_f1(y_hat, y), prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
@@ -156,10 +154,9 @@ class StarSpacePolicy(pl.LightningModule):
         _, y, y_set, _ = batch
         self.log('val_loss', loss, prog_bar=True)
         self.log('val_acc', self.valid_acc(y_hat, y), prog_bar=True)
-        self.log('val_sets', self.valid_mAP(y_hat, y_set), prog_bar=True)
+        self.log('val_f1', self.valid_f1(y_hat, y), prog_bar=True)
         self.log('val_precision', self.valid_precision(y_hat, y), prog_bar=True)
         self.log('val_recall', self.valid_recall(y_hat, y), prog_bar=True)
-        self.log('val_f1', self.valid_f1(y_hat, y), prog_bar=True)
 
     def test_step(self, batch, batch_idx):
 
@@ -167,10 +164,9 @@ class StarSpacePolicy(pl.LightningModule):
         _, y, y_set, _ = batch
 
         self.log('test_acc', self.test_acc(y_hat, y))
-        self.log('test_sets', self.test_mAP(y_hat, y_set))
+        self.log('test_f1', self.test_f1(y_hat, y))
         self.log('test_precision', self.test_precision(y_hat, y))
         self.log('test_recall', self.test_recall(y_hat, y))
-        self.log('test_f1', self.test_f1(y_hat, y))
 
         for index in range(0, len(y)):
             self.test_results['Inputs'].append(batch[0][index].cpu().numpy().tolist())

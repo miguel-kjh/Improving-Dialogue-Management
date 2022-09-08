@@ -24,6 +24,14 @@ class RseStateTracker(StateTracker):
         self._mandatory_slot_column = 'Mandatory Slots'
         self._optional_slot_column = 'Optional Slots'
 
+        self.slot_codification = {
+            'detection': [0, 1],
+            'change': [1, 0],
+            'delete': [1, 1]
+        }
+
+        self.slot_stored = {}
+
     @staticmethod
     def _get_embedding(
             intention: list,
@@ -34,21 +42,22 @@ class RseStateTracker(StateTracker):
             optional_slots: list,
             action: str,
             actions: list,
-            len_intentions: int,
-            len_mandatory_slots: int,
-            len_optional_slots: int,
-            len_actions: int
     ):
+
+        len_intentions = len(intentions)
+        len_mandatory_slots = len(mandatory_slots)*2
+        len_optional_slots = len(optional_slots)*2
+        len_actions = len(actions)
 
         intention_embedding = np.zeros(len_intentions)
         for intent in intention:
             intention_embedding[intentions.index(intent)] = 1
 
-        mandatory_slot_embedding = np.ones(len_mandatory_slots*2)
+        mandatory_slot_embedding = np.ones(len_mandatory_slots)
         mandatory_slot_embedding[::2] = 0
         for slot_ in mandatory_slot:
             mandatory_slot_embedding[mandatory_slots.index(slot_)*2] = 1
-        optional_slot_embedding = np.zeros(len_optional_slots*2)
+        optional_slot_embedding = np.zeros(len_optional_slots)
         for slot_ in optional_slot:
             optional_slot_embedding[optional_slots.index(slot_)*2] = 1
 
@@ -81,7 +90,7 @@ class RseStateTracker(StateTracker):
         print('Mandatory slots: ', mandatory_slots)
         optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
         print('Optional slots: ', optional_slots)
-        len_embedding = len(actions) + len(intents) + len(mandatory_slots) + len(optional_slots)
+        len_embedding = len(actions) + len(intents) + len(mandatory_slots)*2 + len(optional_slots)*2
 
         dialogue_state = self._get_schema_dialogue_state_dataset()
 
@@ -100,11 +109,7 @@ class RseStateTracker(StateTracker):
                     row[self._optional_slot_column],
                     optional_slots,
                     last_action,
-                    actions,
-                    len(intents),
-                    len(mandatory_slots),
-                    len(optional_slots),
-                    len(actions)
+                    actions
                 ))
                 self._add_state_to_schema(
                     dialogue_state,
@@ -121,17 +126,13 @@ class RseStateTracker(StateTracker):
                 for action in row[column_for_actions][1:]:
                     window.add(self._get_embedding(
                         [],
-                        [],
+                        intents,
                         row[self._mandatory_slot_column],
                         mandatory_slots,
                         row[self._optional_slot_column],
                         optional_slots,
                         last_action,
-                        actions,
-                        len(intents),
-                        len(mandatory_slots),
-                        len(optional_slots),
-                        len(actions)
+                        actions
                     ))
                     self._add_state_to_schema(
                         dialogue_state,
@@ -148,7 +149,6 @@ class RseStateTracker(StateTracker):
 
         df = pd.DataFrame(dialogue_state)
         df['Index'] = df.index
-        print(df['State'].values[0])
         return df
 
 
@@ -166,14 +166,14 @@ def main():
         column_for_actions=column_for_actions,
         mx_history_length=max_history_length
     )
-    #encuentra un estado que no tenga la misma shape
-    df['State'] = df['State'].apply(lambda x: np.array(x))
+    embeddings = df['State'].tolist()
+    len_embedding = len(embeddings[0])
+    for embedding in embeddings[1:]:
+        if len_embedding != len(embedding):
+            print(f'Error en el embedding: {len_embedding} != {len(embedding)}')
+    print('Todas las listas de embeddings tienen la misma shape')
     embeddings = np.array(df['State'].tolist())
     print(embeddings.shape)
-#    df.to_csv('state_tracker.csv', index=False)
-
-    """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
-                             f"max_history={max_history_length}")"""
 
 
 if __name__ == '__main__':
