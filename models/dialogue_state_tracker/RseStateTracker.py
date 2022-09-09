@@ -22,7 +22,9 @@ class RseStateTracker(StateTracker):
     def __init__(self):
         super().__init__()
         self._mandatory_slot_column = 'Mandatory Slots'
+        self._mandatory_slot_column_value = 'Mandatory Slots Value'
         self._optional_slot_column = 'Optional Slots'
+        self._optional_slot_column_value = 'Optional Slots Value'
 
         self.slot_codification = {
             'detection': [0, 1],
@@ -30,36 +32,41 @@ class RseStateTracker(StateTracker):
             'delete': [1, 1]
         }
 
-        self.slot_stored = {}
-
-    @staticmethod
     def _get_embedding(
+            self,
             intention: list,
             intentions: list,
             mandatory_slot: list,
+            mandatory_slot_value: list,
             mandatory_slots: list,
             optional_slot: list,
+            optional_slot_value: list,
             optional_slots: list,
             action: str,
             actions: list,
+            slot_stored: dict
     ):
 
         len_intentions = len(intentions)
-        len_mandatory_slots = len(mandatory_slots)*2
-        len_optional_slots = len(optional_slots)*2
+        len_mandatory_slots = len(mandatory_slots)*3
+        len_optional_slots = len(optional_slots)*3
         len_actions = len(actions)
 
         intention_embedding = np.zeros(len_intentions)
         for intent in intention:
             intention_embedding[intentions.index(intent)] = 1
 
-        mandatory_slot_embedding = np.ones(len_mandatory_slots)
-        mandatory_slot_embedding[::2] = 0
-        for slot_ in mandatory_slot:
+        mandatory_slot_embedding = np.zeros(len_mandatory_slots)
+        mandatory_slot_embedding[::3] = 1
+        mandatory_slot_embedding = mandatory_slot_embedding.tolist()
+        for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
             mandatory_slot_embedding[mandatory_slots.index(slot_)*2] = 1
+            slot_stored[slot_] = value_
+
         optional_slot_embedding = np.zeros(len_optional_slots)
-        for slot_ in optional_slot:
+        for slot_, value_ in zip(optional_slot, optional_slot_value):
             optional_slot_embedding[optional_slots.index(slot_)*2] = 1
+            slot_stored[slot_] = value_
 
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
@@ -98,6 +105,7 @@ class RseStateTracker(StateTracker):
         for id_, df_group in tqdm(df_data, desc='RseStateTracker'):
             last_action = 'LISTEN'
             window = WindowStack(mx_history_length, len_embedding)
+            store_slots = {}
             for row in df_group.to_dict('records'):
                 action = row[column_for_actions][0]
                 total_slots = row[self._mandatory_slot_column] + row[self._optional_slot_column]
@@ -105,11 +113,14 @@ class RseStateTracker(StateTracker):
                     row[column_for_intentions],
                     intents,
                     row[self._mandatory_slot_column],
+                    row[self._mandatory_slot_column_value],
                     mandatory_slots,
                     row[self._optional_slot_column],
+                    row[self._optional_slot_column_value],
                     optional_slots,
                     last_action,
-                    actions
+                    actions,
+                    store_slots
                 ))
                 self._add_state_to_schema(
                     dialogue_state,
@@ -128,11 +139,14 @@ class RseStateTracker(StateTracker):
                         [],
                         intents,
                         row[self._mandatory_slot_column],
+                        row[self._mandatory_slot_column_value],
                         mandatory_slots,
                         row[self._optional_slot_column],
+                        row[self._optional_slot_column_value],
                         optional_slots,
                         last_action,
-                        actions
+                        actions,
+                        store_slots
                     ))
                     self._add_state_to_schema(
                         dialogue_state,
