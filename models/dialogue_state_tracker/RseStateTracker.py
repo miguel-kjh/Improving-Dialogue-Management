@@ -9,6 +9,17 @@ from models.dialogue_state_tracker.WindowStack import WindowStack
 from service.InputOutput.MongoDB import MongoDB
 
 
+def map_index_to_one_hot(index: int, r: int = 3, k: int = 4) -> int:
+    """
+    Map an index to a one-hot vector using arithmetic series formula
+    :param index:
+    :param r:
+    :param k:
+    :return:
+    """
+    return k + (index - 1) * r
+
+
 class RseStateTracker(StateTracker):
     """
     This class implements the RSE state tracker. The RSE (representative slots embeddings)
@@ -48,8 +59,8 @@ class RseStateTracker(StateTracker):
     ):
 
         len_intentions = len(intentions)
-        len_mandatory_slots = len(mandatory_slots)*3
-        len_optional_slots = len(optional_slots)*3
+        len_mandatory_slots = len(mandatory_slots) * 3
+        len_optional_slots = len(optional_slots) * 3
         len_actions = len(actions)
 
         intention_embedding = np.zeros(len_intentions)
@@ -57,15 +68,15 @@ class RseStateTracker(StateTracker):
             intention_embedding[intentions.index(intent)] = 1
 
         mandatory_slot_embedding = np.zeros(len_mandatory_slots)
-        mandatory_slot_embedding[::3] = 1
+        mandatory_slot_embedding[2::3] = 1
         mandatory_slot_embedding = mandatory_slot_embedding.tolist()
         for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
-            mandatory_slot_embedding[mandatory_slots.index(slot_)*2] = 1
+            mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
             slot_stored[slot_] = value_
 
         optional_slot_embedding = np.zeros(len_optional_slots)
         for slot_, value_ in zip(optional_slot, optional_slot_value):
-            optional_slot_embedding[optional_slots.index(slot_)*2] = 1
+            optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
             slot_stored[slot_] = value_
 
         action_embedding = np.zeros(len_actions)
@@ -97,7 +108,7 @@ class RseStateTracker(StateTracker):
         print('Mandatory slots: ', mandatory_slots)
         optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
         print('Optional slots: ', optional_slots)
-        len_embedding = len(actions) + len(intents) + len(mandatory_slots)*2 + len(optional_slots)*2
+        len_embedding = len(actions) + len(intents) + (len(mandatory_slots) + len(optional_slots)) * 3
 
         dialogue_state = self._get_schema_dialogue_state_dataset()
 
@@ -188,6 +199,7 @@ def main():
     print('Todas las listas de embeddings tienen la misma shape')
     embeddings = np.array(df['State'].tolist())
     print(embeddings.shape)
+    print(embeddings)
 
 
 if __name__ == '__main__':
