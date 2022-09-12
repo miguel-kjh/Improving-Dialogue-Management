@@ -20,6 +20,58 @@ def map_index_to_one_hot(index: int, r: int = 3, k: int = 4) -> int:
     return k + (index - 1) * r
 
 
+def rse_2(
+        mandatory_slot,
+        mandatory_slots,
+        mandatory_slot_value,
+        optional_slot,
+        optional_slots,
+        optional_slot_value,
+        slot_stored,
+        numerical_factor: int = 3
+) -> tuple:
+    len_mandatory_slots = len(mandatory_slots) * numerical_factor
+    len_optional_slots = len(optional_slots) * numerical_factor
+
+    mandatory_slot_embedding = np.zeros(len_mandatory_slots)
+    mandatory_slot_embedding[2::3] = 1
+    for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
+        mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
+        slot_stored[slot_] = value_
+
+    optional_slot_embedding = np.zeros(len_optional_slots)
+    for slot_, value_ in zip(optional_slot, optional_slot_value):
+        optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
+        slot_stored[slot_] = value_
+
+    return mandatory_slot_embedding, optional_slot_embedding
+
+
+def rse_1(
+        mandatory_slot,
+        mandatory_slots,
+        mandatory_slot_value,
+        optional_slot,
+        optional_slots,
+        optional_slot_value,
+        slot_stored
+) -> tuple:
+    len_mandatory_slots = len(mandatory_slots)
+    len_optional_slots = len(optional_slots)
+
+    mandatory_slot_embedding = np.zeros(len_mandatory_slots)
+    for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
+        mandatory_slot_embedding[mandatory_slots.index(slot_)] = 1.0
+        slot_stored[slot_] = value_
+
+    optional_slot_embedding = np.zeros(len_optional_slots)
+    for slot_, value_ in zip(optional_slot, optional_slot_value):
+        optional_slot_embedding[optional_slots.index(slot_)] = 1.0
+        slot_stored[slot_] = value_
+
+    return mandatory_slot_embedding, optional_slot_embedding
+
+
 class RseStateTracker(StateTracker):
     """
     This class implements the RSE state tracker. The RSE (representative slots embeddings)
@@ -37,12 +89,6 @@ class RseStateTracker(StateTracker):
         self._optional_slot_column = 'Optional Slots'
         self._optional_slot_column_value = 'Optional Slots Value'
 
-        self.slot_codification = {
-            'detection': [0, 1],
-            'change': [1, 0],
-            'delete': [1, 1]
-        }
-
     def _get_embedding(
             self,
             intention: list,
@@ -59,25 +105,21 @@ class RseStateTracker(StateTracker):
     ):
 
         len_intentions = len(intentions)
-        len_mandatory_slots = len(mandatory_slots) * 3
-        len_optional_slots = len(optional_slots) * 3
         len_actions = len(actions)
 
         intention_embedding = np.zeros(len_intentions)
         for intent in intention:
             intention_embedding[intentions.index(intent)] = 1
 
-        mandatory_slot_embedding = np.zeros(len_mandatory_slots)
-        mandatory_slot_embedding[2::3] = 1
-        mandatory_slot_embedding = mandatory_slot_embedding.tolist()
-        for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
-            mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
-            slot_stored[slot_] = value_
-
-        optional_slot_embedding = np.zeros(len_optional_slots)
-        for slot_, value_ in zip(optional_slot, optional_slot_value):
-            optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
-            slot_stored[slot_] = value_
+        mandatory_slot_embedding, optional_slot_embedding = rse_2(
+            mandatory_slot,
+            mandatory_slots,
+            mandatory_slot_value,
+            optional_slot,
+            optional_slots,
+            optional_slot_value,
+            slot_stored
+        )
 
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
@@ -199,7 +241,7 @@ def main():
     print('Todas las listas de embeddings tienen la misma shape')
     embeddings = np.array(df['State'].tolist())
     print(embeddings.shape)
-    print(embeddings)
+    print(embeddings[0][0])
 
 
 if __name__ == '__main__':

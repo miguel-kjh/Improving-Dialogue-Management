@@ -153,19 +153,28 @@ class TrainAndEvaluateService(Pipeline):
         actions_results['Actions'] = self.action_encoder.inverse_transform(actions_results['Actions'])
 
     def _evaluate(self, trainer: pl.Trainer, data: SgdDataModule) -> None:
-        trainer.test(datamodule=data)
+        metrics_results = trainer.test(datamodule=data)
         test_results = trainer.model.test_results
         self._update_test_results(test_results)
 
         test_results = pd.DataFrame(test_results)
+        metrics_results = pd.DataFrame(metrics_results)
         Logger.info('Save results')
         test_results_file = os.path.join(
             self.path_results,
             'embeddings.csv'
         )
+        metrics_results_file = os.path.join(
+            self.path_results,
+            'metrics.csv'
+        )
         self.output_csv_service.save(
             test_results,
             test_results_file
+        )
+        self.output_csv_service.save(
+            metrics_results,
+            metrics_results_file
         )
 
         actions_results = trainer.model.actions_results
