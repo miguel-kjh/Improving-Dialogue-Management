@@ -99,7 +99,7 @@ class TrainAndEvaluateService(Pipeline):
     def __get_callbacks() -> list:
         callbacks = [
             EarlyStopping(
-                monitor='val_acc',
+                monitor='val_f1',
                 verbose=True,
                 mode='max'
             )

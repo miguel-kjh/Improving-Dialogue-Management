@@ -30,18 +30,37 @@ def rse_2(
         slot_stored,
         numerical_factor: int = 3
 ) -> tuple:
+
     len_mandatory_slots = len(mandatory_slots) * numerical_factor
     len_optional_slots = len(optional_slots) * numerical_factor
 
     mandatory_slot_embedding = np.zeros(len_mandatory_slots)
     mandatory_slot_embedding[2::3] = 1
     for slot_, value_ in zip(mandatory_slot, mandatory_slot_value):
-        mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
+        if slot_ in slot_stored.keys():
+            if slot_stored[slot_] == value_:
+                mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_), k=3)] = 0.0
+                mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
+            else:
+                mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_), k=3)] = 1.0
+                mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 0.0
+        else:
+            mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_), k=3)] = 0.0
+            mandatory_slot_embedding[map_index_to_one_hot(mandatory_slots.index(slot_))] = 1.0
         slot_stored[slot_] = value_
 
     optional_slot_embedding = np.zeros(len_optional_slots)
     for slot_, value_ in zip(optional_slot, optional_slot_value):
-        optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
+        if slot_ in slot_stored.keys():
+            if slot_stored[slot_] == value_:
+                optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_), k=3)] = 0.0
+                optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
+            else:
+                optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_), k=3)] = 1.0
+                optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 0.0
+        else:
+            optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_), k=3)] = 0.0
+            optional_slot_embedding[map_index_to_one_hot(optional_slots.index(slot_))] = 1.0
         slot_stored[slot_] = value_
 
     return mandatory_slot_embedding, optional_slot_embedding
@@ -221,7 +240,7 @@ class RseStateTracker(StateTracker):
 
 def main():
     mongodb_service = MongoDB("synthetic_dialogues", "mongodb://localhost:27017")
-    df = mongodb_service.load("syn_example_2_optional_slots_chit_chat_ALL")
+    df = mongodb_service.load("syn_example_3_change_idea_ALL")
     assert not df.empty, "Dataframe is empty"
     state_tracker = RseStateTracker()
     column_for_intentions = 'Atomic Intent'
