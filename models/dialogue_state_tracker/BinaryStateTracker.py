@@ -9,8 +9,10 @@ from models.dialogue_state_tracker.WindowStack import WindowStack
 from service.InputOutput.MongoDB import MongoDB
 
 
-# TODO: add slots to the embeddings with actions only
 class BinaryStateTracker(StateTracker):
+
+    def __init__(self, class_correction: bool = False):
+        super().__init__(class_correction)
 
     @staticmethod
     def _get_embedding(
@@ -135,7 +137,7 @@ def main():
         mx_history_length=max_history_length
     )
     print(len(df['State'][0]), len(df['State'][0][0]))
-    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
+    # df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""

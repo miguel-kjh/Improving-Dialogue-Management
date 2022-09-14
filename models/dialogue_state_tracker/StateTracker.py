@@ -5,6 +5,9 @@ import numpy as np
 
 class StateTracker(ABC):
 
+    def __init__(self, class_correction: bool = False):
+        self.class_correction = class_correction
+
     @staticmethod
     def _get_schema_dialogue_state_dataset() -> dict:
         return {

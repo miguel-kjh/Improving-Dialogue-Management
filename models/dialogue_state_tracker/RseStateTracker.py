@@ -101,8 +101,8 @@ class RseStateTracker(StateTracker):
         - The previous action of the system
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, class_correction: bool = False):
+        super().__init__(class_correction=class_correction)
         self._mandatory_slot_column = 'Mandatory Slots'
         self._mandatory_slot_column_value = 'Mandatory Slots Value'
         self._optional_slot_column = 'Optional Slots'
@@ -143,6 +143,8 @@ class RseStateTracker(StateTracker):
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
 
+        is_mandatory_slot_complete = True if np.sum(mandatory_slot_embedding) == 2*len(mandatory_slots) else False
+
         return np.hstack(
             (
                 intention_embedding,
@@ -150,7 +152,14 @@ class RseStateTracker(StateTracker):
                 optional_slot_embedding,
                 action_embedding
             )
-        ).tolist()
+        ).tolist(), is_mandatory_slot_complete
+
+    def _change_fuzzy_action(self, action: str, is_mandatory_slots) -> str:
+        if self.class_correction:
+            if is_mandatory_slots and (action == 'REQ_MORE' or action == 'CONFIRM'):
+                return 'CONFIRM'
+
+        return action
 
     def get_state_and_actions(
             self,
@@ -166,9 +175,7 @@ class RseStateTracker(StateTracker):
         actions = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         mandatory_slots = sorted(list(set(np.hstack(df_data[self._mandatory_slot_column].values))))
-        print('Mandatory slots: ', mandatory_slots)
         optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
-        print('Optional slots: ', optional_slots)
         len_embedding = len(actions) + len(intents) + (len(mandatory_slots) + len(optional_slots)) * 3
 
         dialogue_state = self._get_schema_dialogue_state_dataset()
@@ -181,7 +188,7 @@ class RseStateTracker(StateTracker):
             for row in df_group.to_dict('records'):
                 action = row[column_for_actions][0]
                 total_slots = row[self._mandatory_slot_column] + row[self._optional_slot_column]
-                window.add(self._get_embedding(
+                emb, is_mandatory_slots = self._get_embedding(
                     row[column_for_intentions],
                     intents,
                     row[self._mandatory_slot_column],
@@ -193,7 +200,9 @@ class RseStateTracker(StateTracker):
                     last_action,
                     actions,
                     store_slots
-                ))
+                )
+                window.add(emb)
+                action = self._change_fuzzy_action(action, is_mandatory_slots)
                 self._add_state_to_schema(
                     dialogue_state,
                     id_,
@@ -207,7 +216,9 @@ class RseStateTracker(StateTracker):
                 )
                 last_action = copy(action)
                 for action in row[column_for_actions][1:]:
-                    window.add(self._get_embedding(
+                    window.add(emb)
+                    action = self._change_fuzzy_action(action, is_mandatory_slots)
+                    emb, is_mandatory_slots = self._get_embedding(
                         [],
                         intents,
                         row[self._mandatory_slot_column],
@@ -219,7 +230,9 @@ class RseStateTracker(StateTracker):
                         last_action,
                         actions,
                         store_slots
-                    ))
+                    )
+                    window.add(emb)
+                    action = self._change_fuzzy_action(action, is_mandatory_slots)
                     self._add_state_to_schema(
                         dialogue_state,
                         id_,
