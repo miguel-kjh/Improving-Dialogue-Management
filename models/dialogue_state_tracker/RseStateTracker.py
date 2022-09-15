@@ -103,10 +103,6 @@ class RseStateTracker(StateTracker):
 
     def __init__(self, class_correction: bool = False):
         super().__init__(class_correction=class_correction)
-        self._mandatory_slot_column = 'Mandatory Slots'
-        self._mandatory_slot_column_value = 'Mandatory Slots Value'
-        self._optional_slot_column = 'Optional Slots'
-        self._optional_slot_column_value = 'Optional Slots Value'
 
     def _get_embedding(
             self,
@@ -153,13 +149,6 @@ class RseStateTracker(StateTracker):
                 action_embedding
             )
         ).tolist(), is_mandatory_slot_complete
-
-    def _change_fuzzy_action(self, action: str, is_mandatory_slots) -> str:
-        if self.class_correction:
-            if is_mandatory_slots and (action == 'REQ_MORE' or action == 'CONFIRM'):
-                return 'CONFIRM'
-
-        return action
 
     def get_state_and_actions(
             self,

@@ -18,31 +18,43 @@ class BinaryStateTracker(StateTracker):
     def _get_embedding(
             intention: list,
             intentions: list,
-            slot: list,
-            slots: list,
+            mandatory_slot: list,
+            mandatory_slot_value: list,
+            mandatory_slots: list,
+            optional_slot: list,
+            optional_slot_value: list,
+            optional_slots: list,
             action: str,
             actions: list,
-            len_intentions: int,
-            len_slots: int,
-            len_actions: int
     ):
+
+        len_intentions = len(intentions)
+        len_actions = len(actions)
+        len_mandatory_slots = len(mandatory_slots)
+        len_optional_slots = len(optional_slots)
 
         intention_embedding = np.zeros(len_intentions)
         for intent in intention:
             intention_embedding[intentions.index(intent)] = 1
-        slot_embedding = np.zeros(len_slots)
-        for slot_ in slot:
-            slot_embedding[slots.index(slot_)] = 1
+        mandatory_slot_embedding = np.zeros(len_mandatory_slots)
+        for slot_ in mandatory_slot:
+            mandatory_slot_embedding[mandatory_slots.index(slot_)] = 1
+        optional_slot_embedding = np.zeros(len_optional_slots)
+        for slot_ in optional_slot:
+            optional_slot_embedding[optional_slots.index(slot_)] = 1
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
+
+        is_mandatory_slot_complete = True if np.sum(mandatory_slot_embedding) == len(mandatory_slots) else False
 
         return np.hstack(
             (
                 intention_embedding,
-                slot_embedding,
+                mandatory_slot_embedding,
+                optional_slot_embedding,
                 action_embedding
             )
-        ).tolist()
+        ).tolist(), is_mandatory_slot_complete
 
     def get_state_and_actions(
             self,
@@ -57,8 +69,11 @@ class BinaryStateTracker(StateTracker):
         df_data = df_data_oring.copy()
         actions = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
-        slots = sorted(list(set(np.hstack(df_data['Slots'].values))))
-        len_embedding = len(actions) + len(intents) + len(slots)
+        mandatory_slots = sorted(list(set(np.hstack(df_data[self._mandatory_slot_column].values))))
+        print(mandatory_slots)
+        optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
+        print(optional_slots)
+        len_embedding = len(actions) + len(intents) + len(mandatory_slots) + len(optional_slots)
 
         dialogue_state = self._get_schema_dialogue_state_dataset()
 
@@ -68,22 +83,26 @@ class BinaryStateTracker(StateTracker):
             window = WindowStack(mx_history_length, len_embedding)
             for row in df_group.to_dict('records'):
                 action = row[column_for_actions][0]
-                window.add(self._get_embedding(
+                total_slots = row[self._mandatory_slot_column] + row[self._optional_slot_column]
+                emb, is_mandatory_slots = self._get_embedding(
                     row[column_for_intentions],
                     intents,
-                    row['Slots'],
-                    slots,
+                    row[self._mandatory_slot_column],
+                    row[self._mandatory_slot_column_value],
+                    mandatory_slots,
+                    row[self._optional_slot_column],
+                    row[self._optional_slot_column_value],
+                    optional_slots,
                     last_action,
-                    actions,
-                    len(intents),
-                    len(slots),
-                    len(actions)
-                ))
+                    actions
+                )
+                window.add(emb)
+                action = self._change_fuzzy_action(action, is_mandatory_slots)
                 self._add_state_to_schema(
                     dialogue_state,
                     id_,
                     row[column_for_intentions],
-                    row['Slots'],
+                    total_slots,
                     last_action,
                     action,
                     row[column_for_actions],
@@ -92,22 +111,25 @@ class BinaryStateTracker(StateTracker):
                 )
                 last_action = copy(action)
                 for action in row[column_for_actions][1:]:
-                    window.add(self._get_embedding(
+                    emb, is_mandatory_slots = self._get_embedding(
                         [],
-                        [],
-                        row['Slots'],
-                        slots,
+                        intents,
+                        row[self._mandatory_slot_column],
+                        row[self._mandatory_slot_column_value],
+                        mandatory_slots,
+                        row[self._optional_slot_column],
+                        row[self._optional_slot_column_value],
+                        optional_slots,
                         last_action,
                         actions,
-                        len(intents),
-                        len(slots),
-                        len(actions)
-                    ))
+                    )
+                    window.add(emb)
+                    action = self._change_fuzzy_action(action, is_mandatory_slots)
                     self._add_state_to_schema(
                         dialogue_state,
                         id_,
                         [],
-                        row['Slots'],
+                        total_slots,
                         last_action,
                         action,
                         row[column_for_actions],
@@ -122,9 +144,8 @@ class BinaryStateTracker(StateTracker):
 
 
 def main():
-    mongodb_service = MongoDB("SGD", "mongodb://localhost:27017")
-    df = mongodb_service.load("SGD_dataset_TINY")
-    print(set(df['Type']))
+    mongodb_service = MongoDB("synthetic_dialogues", "mongodb://localhost:27017")
+    df = mongodb_service.load("syn_example_1_mandatory_slots_ALL")
     assert not df.empty, "Dataframe is empty"
     state_tracker = BinaryStateTracker()
     column_for_intentions = 'Atomic Intent'
@@ -141,6 +162,10 @@ def main():
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""
+    embeddings = np.array(df['State'].tolist())
+    print(embeddings.shape)
+    print(embeddings[0][0])
+    print(embeddings)
 
 
 if __name__ == '__main__':

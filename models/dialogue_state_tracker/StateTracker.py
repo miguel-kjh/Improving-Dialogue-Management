@@ -7,6 +7,10 @@ class StateTracker(ABC):
 
     def __init__(self, class_correction: bool = False):
         self.class_correction = class_correction
+        self._mandatory_slot_column = 'Mandatory Slots'
+        self._mandatory_slot_column_value = 'Mandatory Slots Value'
+        self._optional_slot_column = 'Optional Slots'
+        self._optional_slot_column_value = 'Optional Slots Value'
 
     @staticmethod
     def _get_schema_dialogue_state_dataset() -> dict:
@@ -50,6 +54,13 @@ class StateTracker(ABC):
             mx_history_length = 1
 
         return mx_history_length
+
+    def _change_fuzzy_action(self, action: str, is_mandatory_slots) -> str:
+        if self.class_correction:
+            if is_mandatory_slots and (action == 'REQ_MORE' or action == 'CONFIRM'):
+                return 'CONFIRM'
+
+        return action
 
     def get_state_and_actions(
             self,
