@@ -138,17 +138,26 @@ class TrainAndEvaluateService(Pipeline):
         return intentions, slots, pre_actions, dialogue_id
 
     def _update_test_results(self, test_results: dict):
+        intentions, slots, pre_actions, dialogue_id = self._transform_binary_embeddings(test_results['Index'])
+        test_results['Dialogue_ID'] = dialogue_id
+        test_results['Intentions'] = intentions
         test_results['Predictions'] = self.action_encoder.inverse_transform(test_results['Predictions'])
         test_results['Labels'] = self.action_encoder.inverse_transform(test_results['Labels'])
+        test_results['Slots'] = slots
         test_results['Ranking'] = [
             self.action_encoder.inverse_transform(ranking)
             for ranking in test_results['Ranking']
         ]
-        intentions, slots, pre_actions, dialogue_id = self._transform_binary_embeddings(test_results['Index'])
-        test_results['Intentions'] = intentions
-        test_results['Slots'] = slots
         test_results['Prev_actions'] = pre_actions
-        test_results['Dialogue_ID'] = dialogue_id
+        df = pd.DataFrame(test_results)
+        corrects_ids = []
+        for id in set(dialogue_id):
+            samples = df[df['Dialogue_ID'] == id]['IsCorrect'].tolist()
+            if sum(samples) == len(samples):
+                corrects_ids += [True] * len(samples)
+            else:
+                corrects_ids += [False] * len(samples)
+        test_results['IsCorrectID'] = corrects_ids
 
     def _update_actions_results(self, actions_results: dict):
         actions_results['Actions'] = self.action_encoder.inverse_transform(actions_results['Actions'])
