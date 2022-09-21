@@ -19,10 +19,9 @@ class BinaryStateTracker(StateTracker):
             intention: list,
             intentions: list,
             mandatory_slot: list,
-            mandatory_slot_value: list,
             mandatory_slots: list,
+            mandatory_slots_by_domain: list,
             optional_slot: list,
-            optional_slot_value: list,
             optional_slots: list,
             action: str,
             actions: list,
@@ -32,6 +31,7 @@ class BinaryStateTracker(StateTracker):
         len_actions = len(actions)
         len_mandatory_slots = len(mandatory_slots)
         len_optional_slots = len(optional_slots)
+
 
         intention_embedding = np.zeros(len_intentions)
         for intent in intention:
@@ -45,7 +45,12 @@ class BinaryStateTracker(StateTracker):
         action_embedding = np.zeros(len_actions)
         action_embedding[actions.index(action)] = 1
 
-        is_mandatory_slot_complete = True if np.sum(mandatory_slot_embedding) == len(mandatory_slots) else False
+        mandatory_slots_by_domain_idx = [mandatory_slots.index(slot) for slot in mandatory_slots_by_domain]
+        is_mandatory_slot_complete = True
+        for idx in mandatory_slots_by_domain_idx:
+            if mandatory_slot_embedding[idx] == 0:
+                is_mandatory_slot_complete = False
+                break
 
         return np.hstack(
             (
@@ -70,12 +75,11 @@ class BinaryStateTracker(StateTracker):
         actions = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         mandatory_slots = sorted(list(set(np.hstack(df_data[self._mandatory_slot_column].values))))
-        print(mandatory_slots)
         optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
-        print(optional_slots)
         len_embedding = len(actions) + len(intents) + len(mandatory_slots) + len(optional_slots)
 
         dialogue_state = self._get_schema_dialogue_state_dataset()
+        slots_by_domains = self._get_slots_by_domain(df_data)
 
         df_data = df_data.groupby(by='Dialogue ID')
         for id_, df_group in tqdm(df_data, desc='StateTracker'):
@@ -88,10 +92,9 @@ class BinaryStateTracker(StateTracker):
                     row[column_for_intentions],
                     intents,
                     row[self._mandatory_slot_column],
-                    row[self._mandatory_slot_column_value],
                     mandatory_slots,
+                    slots_by_domains[row['Domain']]['mandatory'],
                     row[self._optional_slot_column],
-                    row[self._optional_slot_column_value],
                     optional_slots,
                     last_action,
                     actions
@@ -115,10 +118,9 @@ class BinaryStateTracker(StateTracker):
                         [],
                         intents,
                         row[self._mandatory_slot_column],
-                        row[self._mandatory_slot_column_value],
                         mandatory_slots,
+                        slots_by_domains[row['Domain']]['mandatory'],
                         row[self._optional_slot_column],
-                        row[self._optional_slot_column_value],
                         optional_slots,
                         last_action,
                         actions,
@@ -145,7 +147,7 @@ class BinaryStateTracker(StateTracker):
 
 def main():
     mongodb_service = MongoDB("synthetic_dialogues", "mongodb://localhost:27017")
-    df = mongodb_service.load("syn_example_1_mandatory_slots_ALL")
+    df = mongodb_service.load("syn_example_4_multidomain_ALL")
     assert not df.empty, "Dataframe is empty"
     state_tracker = BinaryStateTracker()
     column_for_intentions = 'Atomic Intent'

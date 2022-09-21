@@ -62,6 +62,20 @@ class StateTracker(ABC):
 
         return action
 
+    def _get_slots_by_domain(self, df_data: pd.DataFrame) -> dict:
+        slots_by_domain = dict()
+        # pasar la columna de domain a str
+        df_data['Domain'] = df_data['Domain'].apply(lambda x: str(x))
+        # agrupar los datos por el domino
+        grouped = df_data.groupby('Domain')
+        for domain, df_group in grouped:
+            slots_by_domain[domain] = {
+                "mandatory": sorted(list(set(np.hstack(df_group[self._mandatory_slot_column].values)))),
+                "optional": sorted(list(set(np.hstack(df_group[self._optional_slot_column].values))))
+            }
+
+        return slots_by_domain
+
     def get_state_and_actions(
             self,
             df_data_oring: pd.DataFrame,
