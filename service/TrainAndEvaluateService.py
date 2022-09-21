@@ -151,12 +151,13 @@ class TrainAndEvaluateService(Pipeline):
         test_results['Prev_actions'] = pre_actions
         df = pd.DataFrame(test_results)
         corrects_ids = []
-        for id in set(dialogue_id):
-            samples = df[df['Dialogue_ID'] == id]['IsCorrect'].tolist()
-            if sum(samples) == len(samples):
-                corrects_ids += [True] * len(samples)
-            else:
-                corrects_ids += [False] * len(samples)
+        ids_checked = {}
+        for dialogue_number in dialogue_id:
+            if dialogue_number not in ids_checked:
+                samples = df[df['Dialogue_ID'] == dialogue_number]['IsCorrect'].tolist()
+                ids_checked[dialogue_number] = all(samples)
+            corrects_ids.append(ids_checked[dialogue_number])
+
         test_results['IsCorrectID'] = corrects_ids
 
     def _update_actions_results(self, actions_results: dict):
