@@ -169,6 +169,20 @@ class TrainAndEvaluateService(Pipeline):
         self._update_test_results(test_results)
 
         test_results = pd.DataFrame(test_results)
+        test_results = test_results[[
+            'Index',
+            'Inputs',
+            'Embeddings',
+            'Dialogue_ID',
+            'IsCorrectID',
+            'IsCorrect',
+            'Intentions',
+            'Predictions',
+            'Labels',
+            'Slots',
+            'Prev_actions',
+            'Ranking',
+        ]]
         metrics_results = pd.DataFrame(metrics_results)
         Logger.info('Save results')
         test_results_file = os.path.join(
