@@ -46,10 +46,7 @@ class TrainAndEvaluateService(Pipeline):
         column_for_actions = self.configuration['dataset']['action']
         max_history_length = self.configuration['dataset']['max_history']
         dataset_name = f"{self.name}_{domain}"
-        model = self.configuration['model']['name']
-        self.name_experiment = f"{model}_{self.name}_{domain}_{column_for_intentions}_{column_for_actions}" \
-                               f"_{max_history_length}_{embedding_type}"
-        #self.dataset = self.mongodb_service.load(file_dataset)
+        self.name_experiment = f"max_history-{max_history_length}_embedding_type-{embedding_type}_class_correction-{class_correction}"
         Logger.info("Create new dataset with that configuration")
         df = self.mongodb_service.load(dataset_name)
         assert not df.empty, f"Dataset {os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
