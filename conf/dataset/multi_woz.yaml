@@ -1,6 +1,6 @@
 name: "multi_woz_dataset"
 DB_name: "multi_woz"
 domain: "TINY"
-intention: "Atomic Intent"
-action: "Atomic Action"
+intention: "Intention"
+action: "Action"
 max_history: 5

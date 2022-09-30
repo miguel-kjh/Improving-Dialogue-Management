@@ -1,6 +1,6 @@
 name: "SGD_dataset"
 DB_name: "SGD"
 domain: "TINY"
-intention: "Atomic Intent"
-action: "Atomic Action"
+intention: "Intention"
+action: "Action"
 max_history: 5
