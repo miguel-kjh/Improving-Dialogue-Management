@@ -66,8 +66,10 @@ class TrainAndEvaluateService(Pipeline):
         self.actions_one_hot_encoder.fit(self.actions.reshape(-1, 1))
         self.num_classes = len(self.action_encoder.classes_)
         self.activate_wandb_logging = self.configuration['resources']['wandb']
+        path_dataset_results = os.path.join('results', dataset_name)
+        self._create_folder(path_dataset_results, delete_if_exist=False)
         self.path_results = os.path.join(
-            "results",
+            path_dataset_results,
             self.name_experiment
         )
         self._create_folder(self.path_results)
@@ -76,10 +78,13 @@ class TrainAndEvaluateService(Pipeline):
         return self.path_results
 
     @staticmethod
-    def _create_folder(path: str):
+    def _create_folder(path: str, delete_if_exist: bool = True):
 
         if os.path.exists(path):
-            shutil.rmtree(path)
+            if delete_if_exist:
+                shutil.rmtree(path)
+            else:
+                return
 
         Logger.info("Creating folder: " + path)
         os.makedirs(path)
