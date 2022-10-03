@@ -46,10 +46,15 @@ class TrainAndEvaluateService(Pipeline):
         column_for_actions = self.configuration['dataset']['action']
         max_history_length = self.configuration['dataset']['max_history']
         dataset_name = f"{self.name}_{domain}"
-        self.name_experiment = f"max_history-{max_history_length}_embedding_type-{embedding_type}_class_correction-{class_correction}"
+        self.name_experiment = f"max_history-{max_history_length}" \
+                               f"_embedding_type-{embedding_type}" \
+                               f"_class_correction-{class_correction}" \
+                               f"_{column_for_intentions}" \
+                               f"_{column_for_actions}"
         Logger.info("Create new dataset with that configuration")
         df = self.mongodb_service.load(dataset_name)
-        assert not df.empty, f"Dataset {os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
+        assert not df.empty, f"Dataset " \
+                             f"{os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
 
         self.dataset = self.state_tracker.get_state_and_actions(
             df,
@@ -118,7 +123,7 @@ class TrainAndEvaluateService(Pipeline):
             gpus=self.configuration['resources']['gpus'],
             logger=wandb_logger,
             max_epochs=self.configuration['model']['epochs'],
-            #callbacks=self.__get_callbacks()
+            # callbacks=self.__get_callbacks()
         )
 
         trainer.fit(model, data)
