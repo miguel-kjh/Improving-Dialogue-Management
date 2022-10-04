@@ -29,7 +29,10 @@ class TrainAndEvaluateService(Pipeline):
     def __init__(self, configuration: dict):
         super().__init__()
         self.configuration = copy.deepcopy(configuration)
-        self.mongodb_service = MongoDB(configuration['dataset']['DB_name'], configuration['database'][0]['path'])
+        self.mongodb_service = MongoDB(
+            configuration['dataset']['DB_name'],
+            configuration['database'][0]['path']
+        )
         self.state_tracker = None
         embedding_type = self.configuration['model']['embedding_type']
         class_correction = self.configuration['model']['class_correction']
