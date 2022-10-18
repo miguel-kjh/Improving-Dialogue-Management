@@ -22,3 +22,4 @@ activation: "relu"
 lr: 1e-3
 embedding_type: "binary" # "binary" or "rse"
 name: "TED"
+class_correction: False
