@@ -43,7 +43,8 @@ class BinaryStateTracker(StateTracker):
         for slot_ in optional_slot:
             optional_slot_embedding[optional_slots.index(slot_)] = 1
         action_embedding = np.zeros(len_actions)
-        action_embedding[actions.index(action)] = 1
+        if action is not None:
+            action_embedding[actions.index(action)] = 1
 
         mandatory_slots_by_domain_idx = [mandatory_slots.index(slot) for slot in mandatory_slots_by_domain]
         is_mandatory_slot_complete = True
@@ -83,7 +84,7 @@ class BinaryStateTracker(StateTracker):
 
         df_data = df_data.groupby(by='Dialogue ID')
         for id_, df_group in tqdm(df_data, desc='StateTracker'):
-            last_action = 'LISTEN'
+            last_action = None
             window = WindowStack(mx_history_length, len_embedding)
             for row in df_group.to_dict('records'):
                 action = row[column_for_actions][0]
