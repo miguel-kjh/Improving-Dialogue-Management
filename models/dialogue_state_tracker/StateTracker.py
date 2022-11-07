@@ -7,22 +7,28 @@ class StateTracker(ABC):
 
     def __init__(self, class_correction: bool = False):
         self.class_correction = class_correction
+        self._slots_column = 'Slots'
         self._mandatory_slot_column = 'Mandatory Slots'
         self._mandatory_slot_column_value = 'Mandatory Slots Value'
         self._optional_slot_column = 'Optional Slots'
         self._optional_slot_column_value = 'Optional Slots Value'
+        self._entity_column = 'Entities'
+        self._task_column = 'Task'
+        self._columns_for_schema = [
+            'Dialogue_ID',
+            'Intention',
+            'Slots',
+            'Prev_action',
+            'Label',
+            'Set_Label',
+            'Type',
+            'State'
+        ]
 
-    @staticmethod
-    def _get_schema_dialogue_state_dataset() -> dict:
+    def _get_schema_dialogue_state_dataset(self) -> dict:
         return {
-            'Dialogue_ID': [],
-            'Intention': [],
-            'Slots': [],
-            'Prev_action': [],
-            'Label': [],
-            'Set_Label': [],
-            'Type': [],
-            'State': []
+            column: []
+            for column in self._columns_for_schema
         }
 
     @staticmethod
