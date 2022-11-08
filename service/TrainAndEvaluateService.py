@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from typing import List
 
 from service.Pipeline import Pipeline
-from models.data.TedDataModule import TedDataModule
+from models.datamodule.TedDataModule import TedDataModule
 
 from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
 from models.dialogue_state_tracker.RseStateTracker import RseStateTracker
