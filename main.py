@@ -9,6 +9,7 @@ from service.TrainAndEvaluateService import TrainAndEvaluateService
 from service.MetricService import MetricService
 
 import warnings
+
 warnings.filterwarnings("ignore", ".*")
 
 
@@ -18,16 +19,23 @@ def reset_seed(seed: int) -> None:
     np.random.seed(seed)
 
 
+class Main:
+    def __init__(self, config: DictConfig):
+        self.config = config
+
+    def run(self):
+        pass
+
+
 @hydra.main(config_path="conf", config_name="config", version_base=None)
 def main(cfg: DictConfig) -> None:
-
     reset_seed(cfg['resources']['seed'])
 
     train_and_evaluate_service = TrainAndEvaluateService(cfg)
-    train_and_evaluate_service.process()
+    train_and_evaluate_service.run()
 
     metrics_service = MetricService(train_and_evaluate_service.get_path_results())
-    metrics_service.process()
+    metrics_service.run()
 
 
 if __name__ == "__main__":

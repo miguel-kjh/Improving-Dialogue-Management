@@ -9,7 +9,6 @@ from service.InputOutput.InputJsonService import InputJsonService
 from service.InputOutput.InputPklService import InputPklService
 from service.InputOutput.OutputPklService import OutputPklService
 from service.InputOutput.OutputJpgService import OutputJpgService
-from service.InputOutput.MongoDB import MongoDB
 
 
 class Pipeline(metaclass=ABCMeta):
@@ -33,7 +32,7 @@ class Pipeline(metaclass=ABCMeta):
         self.priority = 0
 
     @abstractmethod
-    def process(self):
+    def run(self):
         raise NotImplementedError
 
     # compare the priority of the pipeline

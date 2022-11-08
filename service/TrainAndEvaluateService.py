@@ -252,7 +252,7 @@ class TrainAndEvaluateService(Pipeline):
 
         return features, labels, set_labels, indexes
 
-    def process(self):
+    def run(self):
         n_features = self.embeddings[0].shape[1]
         self.configuration['model']['n_features'] = n_features
         self.configuration['model']['hidden_layers_sizes_pre_dial'][0][0] = n_features

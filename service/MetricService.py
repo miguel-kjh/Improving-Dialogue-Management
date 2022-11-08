@@ -32,7 +32,7 @@ class MetricService(Pipeline):
         self.columns_for_actions = ['Inputs', 'Embeddings']
         self.latent_space_name = 'latent_space'
 
-    def process(self):
+    def run(self):
         Logger.info("Read file: " + self.path)
         pd_df = self.input_csv_service.load(self.embeddings_file)
         pd_df_actions = self.input_csv_service.load(self.actions_file)
