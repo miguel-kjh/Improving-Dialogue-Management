@@ -42,7 +42,7 @@ class DiaStateTracker(StateTracker):
                     action)] = 1
         return emb
 
-    def get_state_and_actions(
+    def create(
             self,
             df_data_oring: pd.DataFrame,
             column_for_intentions,
@@ -107,7 +107,7 @@ def main():
     state_tracker = DiaStateTracker()
     column_for_intentions = 'Intention'
     column_for_actions = 'Action'
-    df = state_tracker.get_state_and_actions(
+    df = state_tracker.create(
         df,
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions

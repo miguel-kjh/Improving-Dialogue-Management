@@ -82,7 +82,7 @@ class StateTracker(ABC):
 
         return slots_by_domain
 
-    def get_state_and_actions(
+    def create(
             self,
             df_data_oring: pd.DataFrame,
             column_for_intentions,

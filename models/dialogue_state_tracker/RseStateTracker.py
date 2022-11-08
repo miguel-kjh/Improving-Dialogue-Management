@@ -157,7 +157,7 @@ class RseStateTracker(StateTracker):
             )
         ).tolist(), is_mandatory_slot_complete
 
-    def get_state_and_actions(
+    def create(
             self,
             df_data_oring: pd.DataFrame,
             column_for_intentions,
@@ -258,7 +258,7 @@ def main():
     column_for_intentions = 'Atomic Intent'
     column_for_actions = 'Action'
     max_history_length = 2
-    df = state_tracker.get_state_and_actions(
+    df = state_tracker.create(
         df,
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions,

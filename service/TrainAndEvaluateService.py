@@ -59,7 +59,7 @@ class TrainAndEvaluateService(Pipeline):
         assert not df.empty, f"Dataset " \
                              f"{os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
 
-        self.dataset = self.state_tracker.get_state_and_actions(
+        self.dataset = self.state_tracker.create(
             df,
             column_for_intentions=column_for_intentions,
             column_for_actions=column_for_actions,
