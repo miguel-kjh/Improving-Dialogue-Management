@@ -112,7 +112,7 @@ def main():
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions
     )
-    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
+    df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False, sep=';')
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""
