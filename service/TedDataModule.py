@@ -51,7 +51,7 @@ class Dataset(torch.utils.data.Dataset):
         return listToTensor(x), y, torch.tensor(set_y).T, real_index
 
 
-class SgdDataModule(pl.LightningDataModule, ABC):
+class TedDataModule(pl.LightningDataModule, ABC):
 
     def __init__(
             self,

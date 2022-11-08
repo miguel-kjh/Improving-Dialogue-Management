@@ -1,0 +1,14 @@
+s_dim: -1
+max_len: -1
+h_dim: 200
+a_dim: -1
+gumbel: true
+dropout: 0.1
+batch_size: 64
+epochs: 10
+opt: "Adam"
+activation: "relu"
+lr: 1e-3
+embedding_type: "dia"
+name: "DiaMultiClass"
+class_correction: False

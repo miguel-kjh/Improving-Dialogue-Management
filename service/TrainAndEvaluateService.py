@@ -12,7 +12,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from typing import List
 
 from service.Pipeline import Pipeline
-from service.SgdDataModule import SgdDataModule
+from service.TedDataModule import TedDataModule
 
 from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
 from models.dialogue_state_tracker.RseStateTracker import RseStateTracker
@@ -118,7 +118,7 @@ class TrainAndEvaluateService(Pipeline):
 
         return callbacks
 
-    def _fit(self, model: pl.LightningModule, data: SgdDataModule) -> pl.Trainer:
+    def _fit(self, model: pl.LightningModule, data: TedDataModule) -> pl.Trainer:
         wandb_logger = WandbLogger(project=self.name, name=self.name_experiment) \
             if self.activate_wandb_logging else None
 
@@ -173,7 +173,7 @@ class TrainAndEvaluateService(Pipeline):
     def _update_actions_results(self, actions_results: dict):
         actions_results['Actions'] = self.action_encoder.inverse_transform(actions_results['Actions'])
 
-    def _evaluate(self, trainer: pl.Trainer, data: SgdDataModule) -> None:
+    def _evaluate(self, trainer: pl.Trainer, data: TedDataModule) -> None:
         metrics_results = trainer.test(datamodule=data)
         test_results = trainer.model.test_results
         self._update_test_results(test_results)
@@ -267,7 +267,7 @@ class TrainAndEvaluateService(Pipeline):
         validation, validation_labels, set_validation_labels, validation_indexes = self._get_samples_by_dataset('dev')
         test, test_labels, set_test_labels, test_indexes = self._get_samples_by_dataset('test')
 
-        sgd_module = SgdDataModule(
+        sgd_module = TedDataModule(
             train,
             train_labels,
             set_train_labels,

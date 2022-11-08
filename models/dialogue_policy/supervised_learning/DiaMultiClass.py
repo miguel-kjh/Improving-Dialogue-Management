@@ -1,23 +1,20 @@
 import torch
 import torch.nn as nn
 
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 def gumbel_sigmoid_sample(logits, temperature, eps=1e-20):
-    uniform1 = torch.rand(logits.size()).to(DEVICE)
-    uniform2 = torch.rand(logits.size()).to(DEVICE)
+    uniform1 = torch.rand(logits.size())
+    uniform2 = torch.rand(logits.size())
     noise = -torch.log(torch.log(uniform2 + eps) / torch.log(uniform1 + eps) + eps)
     y = logits + noise
     return torch.sigmoid(y / temperature)
 
 
 class DiaMultiClass(nn.Module):
-    def __init__(self, args, cfg):
+    def __init__(self, cfg):
         super(DiaMultiClass, self).__init__()
-        self.args = args
         self.cfg = cfg
-        self.dropout = nn.Dropout(p=args.dropout)
+        self.dropout = nn.Dropout(p=cfg.dropout)
         self.a_dim = cfg.a_dim
 
         self.net = nn.Sequential(nn.Linear(cfg.s_dim, cfg.h_dim),
@@ -53,25 +50,25 @@ class DiaMultiClass(nn.Module):
         :param s: [b, s_dim]
         :return: hidden_state after several rollout
         """
-        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1).to(DEVICE)
+        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
         if len(s_target_pos.shape) == 1:
             s_target_pos = s_target_pos.unsqueeze(1)
-        mask_begin = s_target_pos.repeat(1, self.cfg.max_len).to(DEVICE)
+        mask_begin = s_target_pos.repeat(1, self.cfg.max_len)
         mask = mask_cols.lt(mask_begin).long()
 
         probs = self.net(s)
-        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim).to(DEVICE)
+        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim)
 
         for i in range(self.cfg.max_len):
-            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(DEVICE)
+            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
-            src_tsr = torch.ones_like(eval_a_sample).float().to(DEVICE)
+            src_tsr = torch.ones_like(eval_a_sample).float()
             temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
 
         loss_pred = self.loss(probs, proc_tgt_tsr)
-        if self.args.gumbel:
+        if self.cfg.gumbel:
             pred_act_tsr = gumbel_sigmoid_sample(probs, 0.001).gt(0)
         else:
             pred_act_tsr = torch.sigmoid(probs).ge(0.5)
@@ -80,24 +77,13 @@ class DiaMultiClass(nn.Module):
 
 
 if __name__ == '__main__':
-    args = {}
-    args['dropout'] = 0.5
-    args['gumbel'] = False
-
-
-    # dict to class
-    class Args:
-        def __init__(self, entries):
-            self.__dict__.update(entries)
-
-
-    args = Args(args)
-
     cfg = {}
     cfg['s_dim'] = 553
     cfg['h_dim'] = 200
     cfg['a_dim'] = 166
     cfg['max_len'] = 20
+    cfg['dropout'] = 0.5
+    cfg['gumbel'] = False
 
 
     # dict to class
@@ -108,7 +94,7 @@ if __name__ == '__main__':
 
     cfg = Cfg(cfg)
 
-    dia_multi_class = DiaMultiClass(args, cfg)
+    dia_multi_class = DiaMultiClass(cfg)
     s = torch.rand(32, 553)
     a_target_gold = torch.rand(32, 20)
     s_target_pos = torch.zeros(32, 1)
