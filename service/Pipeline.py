@@ -32,7 +32,7 @@ class Pipeline(metaclass=ABCMeta):
         self.priority = 0
 
     @abstractmethod
-    def run(self):
+    def run(self, data: object = None) -> object:
         raise NotImplementedError
 
     # compare the priority of the pipeline
