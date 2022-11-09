@@ -2,7 +2,7 @@ from abc import ABC
 
 from torch import nn as nn
 
-from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
+from models.dialogue_policy.supervised_learning.EmbeddingPolicy_v1 import EmbeddingPolicy
 from utils.ted_utils import create_embedding_layer
 
 

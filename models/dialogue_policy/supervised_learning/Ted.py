@@ -1,35 +1,19 @@
 import math
 from abc import ABC
-
-import torch
-from torch import nn as nn
 from typing import List
 
-from models.dialogue_policy.supervised_learning.EmbeddingPolicy_v1 import EmbeddingPolicy
+from torch import nn
+
+from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
 from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
-
-
-def get_tgt_mask(size) -> torch.tensor:
-    # Generates a squeare matrix where the each row allows one word more to be seen
-    mask = torch.tril(torch.ones(size, size) == 1)  # Lower triangular matrix
-    mask = mask.float()
-    mask = mask.masked_fill(mask == 0, float('-inf'))  # Convert zeros to -inf
-    mask = mask.masked_fill(mask == 1, float(0.0))  # Convert ones to 0
-
-    # EX for size=5:
-    # [[0., -inf, -inf, -inf, -inf],
-    #  [0.,   0., -inf, -inf, -inf],
-    #  [0.,   0.,   0., -inf, -inf],
-    #  [0.,   0.,   0.,   0., -inf],
-    #  [0.,   0.,   0.,   0.,   0.]]
-
-    return mask
+from models.dialogue_policy.supervised_learning.TedPolicy import get_tgt_mask
+from utils.ted_utils import create_ffn_layer
 
 
 class Ted(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, n_actions: List[int]):
-        super().__init__(config, n_actions)
+    def __init__(self, config: dict, actions: List[int]):
+        super().__init__(config, actions)
 
         self.pos_encoder = PositionalEncoding(
             self.hparams.encoding_dimension,

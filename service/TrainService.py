@@ -3,9 +3,7 @@ from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
 from models.dialogue_policy.supervised_learning.DiaPolicy import DiaPolicy
-from models.dialogue_policy.supervised_learning.LedPolicy import Led
-from models.dialogue_policy.supervised_learning.StarSpacePolicy import StarSpacePolicy
-from models.dialogue_policy.supervised_learning.TedPolicy import Ted
+from models.dialogue_policy.supervised_learning.Ted import Ted
 from service.Pipeline import Pipeline
 import pytorch_lightning as pl
 
@@ -24,7 +22,7 @@ class TrainService(Pipeline):
     @staticmethod
     def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
         models = {
-            "SS": StarSpacePolicy,
+            "SS": Ted,
             "DIA": DiaPolicy
         }
         return models[model](config, actions)
