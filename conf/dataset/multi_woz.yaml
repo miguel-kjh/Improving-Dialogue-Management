@@ -3,4 +3,3 @@ DB_name: "multi_woz"
 domain: "TINY"
 intention: "Intention"
 action: "Action"
-max_history: 5

@@ -3,4 +3,3 @@ DB_name: "synthetic_dialogues"
 domain: "ALL"
 intention: "Intention"
 action: "Action"
-max_history: 5

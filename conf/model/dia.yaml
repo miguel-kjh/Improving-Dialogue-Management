@@ -9,6 +9,6 @@ epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
-embedding_type: "dia"
+state: "dia"
 name: "DiaMultiClass"
 class_correction: False

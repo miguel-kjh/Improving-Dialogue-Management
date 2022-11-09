@@ -19,5 +19,14 @@ class TedStateCreator(StateCreator):
         self.max_len = max_len
         self.class_correction = class_correction
 
+    def create_dataset(self) -> pd.DataFrame:
+        state_tracker = self.create_state_tracker()
+        return state_tracker.create(
+            self.df_data,
+            self.column_for_intentions,
+            self.column_for_actions,
+            self.max_len
+        )
+
     def create_state_tracker(self) -> StateTracker:
         return BinaryStateTracker(self.class_correction)
