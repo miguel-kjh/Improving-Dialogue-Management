@@ -17,13 +17,13 @@ class DiaMultiClass(nn.Module):
         self.dropout = nn.Dropout(p=cfg.dropout)
         self.a_dim = cfg.a_dim
 
-        self.net = nn.Sequential(nn.Linear(cfg.s_dim, cfg.h_dim),
+        self.net = nn.Sequential(nn.LazyLinear(cfg.h_dim),
                                  nn.ReLU(),
                                  nn.Linear(cfg.h_dim, cfg.h_dim),
                                  nn.ReLU(),
                                  nn.Linear(cfg.h_dim, cfg.a_dim))
 
-        self.reset_param()
+        #self.reset_param()
         self.loss = nn.BCEWithLogitsLoss()
 
     def reset_param(self):
@@ -40,7 +40,7 @@ class DiaMultiClass(nn.Module):
         else:
             return torch.sigmoid(self.net(s)).gt(0.5)
 
-    def forward(self, s, a_target_gold, s_target_pos=None):
+    def forward(self, s, a_target_gold, s_target_pos):
         """
         :param s_target_pos:
         :param s_target_gold: b * h_s where h_s is all 0 if not available
@@ -50,20 +50,27 @@ class DiaMultiClass(nn.Module):
         :param s: [b, s_dim]
         :return: hidden_state after several rollout
         """
-        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
+        print("s:", s.size())
+        print("a_target_gold:", a_target_gold.size())
+        print("s_target_pos:", s_target_pos.size())
+        print(s_target_pos)
+        max_len = a_target_gold.size(1)
+        mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1)
         if len(s_target_pos.shape) == 1:
             s_target_pos = s_target_pos.unsqueeze(1)
-        mask_begin = s_target_pos.repeat(1, self.cfg.max_len)
+        mask_begin = s_target_pos.repeat(1, max_len)
         mask = mask_cols.lt(mask_begin).long()
 
         probs = self.net(s)
         proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim)
 
-        for i in range(self.cfg.max_len):
+        for i in range(max_len):
             temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
             src_tsr = torch.ones_like(eval_a_sample).float()
-            temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
+            print("src_tsr:", src_tsr.size())
+            print("eval_a_sample:", eval_a_sample.size())
+            temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val #TODO: check this
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
 
@@ -78,12 +85,12 @@ class DiaMultiClass(nn.Module):
 
 if __name__ == '__main__':
     cfg = {}
-    cfg['s_dim'] = 553
+    cfg['s_dim'] = 78
     cfg['h_dim'] = 200
-    cfg['a_dim'] = 166
-    cfg['max_len'] = 20
-    cfg['dropout'] = 0.5
-    cfg['gumbel'] = False
+    cfg['a_dim'] = 10
+    cfg['max_len'] = 10
+    cfg['dropout'] = 0.1
+    cfg['gumbel'] = True
 
 
     # dict to class
@@ -95,8 +102,9 @@ if __name__ == '__main__':
     cfg = Cfg(cfg)
 
     dia_multi_class = DiaMultiClass(cfg)
-    s = torch.rand(32, 553)
-    a_target_gold = torch.rand(32, 20)
-    s_target_pos = torch.zeros(32, 1)
+    batch = 64
+    s = torch.rand(batch, 78)
+    a_target_gold = torch.rand(batch, 10)
+    s_target_pos = torch.rand(batch, 1)
     r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
     print(r)

@@ -4,6 +4,7 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 import pytorch_lightning as pl
+import torch
 from torch.utils.data import DataLoader
 
 
@@ -21,9 +22,9 @@ class DiaDataset:
     def __getitem__(self, index):
         """Generates one sample of data"""
         row = self.df.iloc[index]
-        state = np.array(row['State'].tolist())
-        action = np.array(row['Set_Label'].tolist())
-        last_pos = [np.where(action != 0)[0][-1] + 1]
+        state = torch.tensor(row['State'].tolist(), dtype=torch.float32)
+        action = torch.tensor(row['Set_Label'].tolist(), dtype=torch.float32)
+        last_pos = torch.tensor([np.where(action != 0)[0][-1]], dtype=torch.int32)
         return state, action, last_pos
 
 
@@ -35,10 +36,15 @@ class DiaDataModule(pl.LightningDataModule, ABC):
         self.df_dev = None
         self.df_test = None
         self.df = df
+        self._num_features = len(self.df['State'].iloc[0])
         self.batch_size = batch_size
 
+    @property
+    def num_features(self):
+        return self._num_features
+
     def _prepare_data(self, type_data: str) -> DiaDataset:
-        df = self.df[self.df['set'] == type_data]
+        df = self.df[self.df['Type'] == type_data]
         return DiaDataset(df)
 
     def setup(self, stage: Optional[str] = None):

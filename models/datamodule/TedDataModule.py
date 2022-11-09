@@ -86,6 +86,8 @@ class TedDataModule(pl.LightningDataModule, ABC):
         self.train_indexes = train_indexes
         self.validation_indexes = validation_indexes
         self.test_indexes = test_indexes
+        self._num_features = train.shape[1]
+        self._num_classes = len(np.unique(label_train))
 
     def setup(self, stage: Optional[str] = None):
 
@@ -107,6 +109,14 @@ class TedDataModule(pl.LightningDataModule, ABC):
             self.set_labels_test,
             self.test_indexes
         )
+
+    @property
+    def num_classes(self):
+        return self._num_classes
+
+    @property
+    def num_features(self):
+        return self._num_features
 
     def train_dataloader(self):
         try:

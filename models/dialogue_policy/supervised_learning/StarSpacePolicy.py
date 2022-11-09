@@ -24,8 +24,8 @@ class StarSpacePolicy(pl.LightningModule):
         super(StarSpacePolicy, self).__init__()
         self.save_hyperparameters(config)
 
-        self.num_features = self.hparams.hidden_layers_sizes_pre_dial[-1][-1] \
-            if self.hparams.hidden_layers_sizes_pre_dial else self.hparams.n_features
+        #self.num_features = self.hparams.hidden_layers_sizes_pre_dial[-1][-1] \
+        #    if self.hparams.hidden_layers_sizes_pre_dial else self.hparams.n_features
 
         self.n_actions = len(actions)
         self.actions_one_hot = F.one_hot(torch.tensor(actions, device=self.device), self.n_actions).float()
@@ -58,7 +58,6 @@ class StarSpacePolicy(pl.LightningModule):
         )
 
         self.dense_transformer = create_embedding_layer(
-            self.num_features,
             self.hparams.embedding_space,
             self.hparams.dropout_dialogue,
             self.hparams.regularization_constant
@@ -104,7 +103,7 @@ class StarSpacePolicy(pl.LightningModule):
             if self.hparams.unidirectional_encoder \
             else None
         x = self.pre_dial(x)
-        x = x * math.sqrt(self.num_features)
+        x = x * math.sqrt(x.size(0))
         x = self.pos_encoder(x)
         x = self.transformer(x, mask=mask)
         x = x.mean(dim=1)

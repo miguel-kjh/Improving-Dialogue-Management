@@ -1,5 +1,5 @@
 s_dim: -1
-max_len: -1
+max_len: 20
 h_dim: 200
 a_dim: -1
 gumbel: true
@@ -10,5 +10,5 @@ opt: "Adam"
 activation: "relu"
 lr: 1e-3
 state: "dia"
-name: "DiaMultiClass"
+name: "DIA"
 class_correction: False

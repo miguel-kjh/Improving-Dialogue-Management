@@ -12,11 +12,11 @@ from models.dialogue_policy.loss.DotProductLoss import SingleLabelDotProductLoss
 
 class EmbeddingPolicy(pl.LightningModule):
 
-    def __init__(self, config: dict, actions: List[int]):
+    def __init__(self, config: dict, n_actions: int):
         super(EmbeddingPolicy, self).__init__()
         self.save_hyperparameters(config)
 
-        self.n_actions = len(actions)
+        self.n_actions = n_actions
 
         self.num_features = self.hparams.hidden_layers_sizes_pre_dial[-1][-1] \
             if self.hparams.hidden_layers_sizes_pre_dial else self.hparams.n_features

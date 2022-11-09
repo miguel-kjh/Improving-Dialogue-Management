@@ -1,6 +1,6 @@
 n_features: -1
 encoding_dimension: 40
-hidden_layers_sizes_pre_dial: [[-1, 40]]
+hidden_layers_sizes_pre_dial: [40]
 hidden_layers_sizes_bot: []
 hidden_layers_sizes_post_dial: []
 heads: 4

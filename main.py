@@ -12,6 +12,9 @@ from service.MetricService import MetricService
 
 import warnings
 
+from service.TrainService import TrainService
+from view.Logger import Logger
+
 warnings.filterwarnings("ignore", ".*")
 
 
@@ -33,11 +36,18 @@ class Main:
 def main(cfg: DictConfig) -> None:
     reset_seed(cfg['resources']['seed'])
 
+    Logger.print_title("Load Data")
     load_data_service = LoadDataService(cfg)
     df = load_data_service.run()
+    actions = list(set(np.hstack(df[cfg['state']['action']])))
 
+    Logger.print_title("State Tracker")
     dst = StateTrackerService(cfg)
     data_module = dst.run(df)
+
+    Logger.print_title("Train and Evaluate")
+    train_service = TrainService(cfg, actions)
+    trainer = train_service.run(data_module)
 
     """train_and_evaluate_service = TrainAndEvaluateService(cfg)
     train_and_evaluate_service.run()

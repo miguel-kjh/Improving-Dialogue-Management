@@ -1,19 +1,21 @@
-from typing import Any
+from abc import ABC
+from typing import List
 
 import pytorch_lightning as pl
 import torch
-from torch import nn
 
 from models.dialogue_policy.supervised_learning.DiaMultiClass import DiaMultiClass
 
 
-class DiaPolicy(pl.LightningModule):
+class DiaPolicy(pl.LightningModule, ABC):
 
-    def __init__(self, config: dict) -> None:
+    def __init__(self, config: dict, actions: List[int]) -> None:
         super(DiaPolicy, self).__init__()
+        config['a_dim'] = len(actions)
         self.save_hyperparameters(config)
         # TODO: add all models for dia.yaml: DiaMultiClass.py, DiaMultiDense.py, seq.py
         self.net = DiaMultiClass(self.hparams)
+        self.n_actions = len(actions)
 
     def forward(self, s, a_target_gold, s_target_pos=None):
         return self.net(s, a_target_gold, s_target_pos)

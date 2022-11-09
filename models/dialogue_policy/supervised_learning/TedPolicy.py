@@ -28,8 +28,8 @@ def get_tgt_mask(size) -> torch.tensor:
 
 class Ted(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, actions: List[int]):
-        super().__init__(config, actions)
+    def __init__(self, config: dict, n_actions: List[int]):
+        super().__init__(config, n_actions)
 
         self.pos_encoder = PositionalEncoding(
             self.hparams.encoding_dimension,
@@ -58,7 +58,7 @@ class Ted(EmbeddingPolicy, ABC):
             if self.hparams.unidirectional_encoder \
             else None
         x = self.pre_dial(x)
-        x = x * math.sqrt(self.num_features)
+        x = x * math.sqrt(x.size(0))
         x = self.pos_encoder(x)
         x = self.transformer(x, mask=mask)
         x = x.mean(dim=1)
