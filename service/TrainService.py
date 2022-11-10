@@ -4,6 +4,7 @@ from pytorch_lightning.loggers import WandbLogger
 
 from models.dialogue_policy.supervised_learning.DiaPolicy import DiaPolicy
 from models.dialogue_policy.supervised_learning.Ted import Ted
+from models.dialogue_policy.supervised_learning.Red import Red
 from service.Pipeline import Pipeline
 import pytorch_lightning as pl
 
@@ -23,6 +24,7 @@ class TrainService(Pipeline):
     def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
         models = {
             "SS": Ted,
+            "RED": Red,
             "DIA": DiaPolicy
         }
         return models[model](config, actions)

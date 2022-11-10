@@ -11,7 +11,7 @@ class Red(EmbeddingPolicy, ABC):
     def __init__(self, config: dict, actions: List[int]):
         super().__init__(config, actions)
 
-        self.model = nn.LSTM(input_size=self.num_features,
+        self.model = nn.LSTM(input_size=self.hparams.hidden_layers_sizes_pre_dial[-1],
                              hidden_size=self.hparams.hidden_size,
                              num_layers=self.hparams.num_layers,
                              dropout=self.hparams.dropout_dialogue,
