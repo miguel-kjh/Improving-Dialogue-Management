@@ -1,10 +1,7 @@
 import abc
-import math
 from copy import copy
 from typing import Optional, List, Dict
 import torch
-import pytorch_lightning as pl
-import torch.nn as nn
 import torch.nn.functional as F
 
 from models.dialogue_policy.loss.CosineSimilarity import CosineSimilarity
@@ -12,8 +9,6 @@ from models.dialogue_policy.loss.InnerProductSimilarity import InnerProductSimil
 from models.dialogue_policy.loss.MarginRankingLoss import MarginRankingLoss
 from models.dialogue_policy.loss.ScaleCosineLoss import ScaleCosineLoss
 from models.dialogue_policy.supervised_learning.Policy import Policy
-from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
-from models.dialogue_policy.supervised_learning.TedPolicy import get_tgt_mask
 from models.transformation.NegativeSampling import NegativeSampling
 from utils.ted_utils import get_metrics, create_ffn_layer, create_embedding_layer
 from models.dialogue_policy.supervised_learning.StarSpace import StarSpace

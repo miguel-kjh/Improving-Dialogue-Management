@@ -16,7 +16,7 @@ from models.datamodule.TedDataModule import TedDataModule
 
 from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
 from models.dialogue_state_tracker.RseStateTracker import RseStateTracker
-from models.dialogue_policy.supervised_learning.TedPolicy import Ted
+from models.dialogue_policy.supervised_learning.Ted import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from service.InputOutput.MongoDB import MongoDB

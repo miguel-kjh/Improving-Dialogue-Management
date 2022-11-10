@@ -23,7 +23,7 @@ class TrainService(Pipeline):
     @staticmethod
     def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
         models = {
-            "SS": Ted,
+            "TED": Ted,
             "RED": Red,
             "DIA": DiaPolicy
         }
