@@ -1,3 +1,5 @@
 name: "SGD_dataset"
 DB_name: "SGD"
 domain: "TINY"
+intention: "Intention"
+action: "Action"

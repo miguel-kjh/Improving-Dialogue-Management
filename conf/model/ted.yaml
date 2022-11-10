@@ -1,4 +1,4 @@
-n_features: -1
+name: "TED"
 encoding_dimension: 40
 hidden_layers_sizes_pre_dial: [40]
 hidden_layers_sizes_bot: []
@@ -21,6 +21,4 @@ epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
-state: "binary" # "binary" or "rse"
 class_correction: False
-name: "TED"

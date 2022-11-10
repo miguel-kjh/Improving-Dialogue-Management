@@ -38,15 +38,12 @@ class EmbeddingPolicy(Policy):
 
         self.criterion = ScaleCosineLoss() if self.hparams.loss == 'dot' else MarginRankingLoss()
 
-        self.test_results = {
-            'Index': [],
-            'Inputs': [],
-            'Embeddings': [],
-            'Labels': [],
-            'Predictions': [],
-            'IsCorrect': [],
-            'Ranking': [],
-        }
+        self.test_results.update(
+            {
+                'Embeddings': [],
+                'Ranking': [],
+            }
+        )
 
         self.actions_results = {
             'Actions': actions,

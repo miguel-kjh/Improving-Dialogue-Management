@@ -1,5 +1,6 @@
 import pandas as pd
 import wandb
+from typing import List
 
 from service.Pipeline import Pipeline
 import pytorch_lightning as pl
@@ -7,10 +8,11 @@ import pytorch_lightning as pl
 
 class EvaluateService(Pipeline):
 
-    def __init__(self, data: pl.LightningDataModule):
+    def __init__(self, data: pl.LightningDataModule, actions: List[str]):
         super().__init__()
         self.data = data
         self.dataset = data.dataset
+        self.actions = actions
 
     def _transform_binary_embeddings(self, indexes: list) -> tuple:
         intentions = []
@@ -49,9 +51,6 @@ class EvaluateService(Pipeline):
 
         test_results['IsCorrectID'] = corrects_ids
 
-    def _update_actions_results(self, actions_results: dict):
-        actions_results['Actions'] = actions_results['Actions']
-
     def run(self, data: object = None) -> object:
         assert isinstance(data, pl.Trainer), "Data must be of type Trainer"
         test = data.test(datamodule=self.data)
@@ -59,6 +58,7 @@ class EvaluateService(Pipeline):
         self._update_test_results(test_results)
 
         test_results = pd.DataFrame(test_results)
+        test = pd.DataFrame(test)
         test_results = test_results[[
             'Index',
             'Inputs',
@@ -74,4 +74,4 @@ class EvaluateService(Pipeline):
             'Ranking',
         ]]
         wandb.finish()
-        return test_results
+        return test_results, test

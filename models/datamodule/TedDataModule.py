@@ -54,7 +54,9 @@ class Dataset(torch.utils.data.Dataset):
         return listToTensor(x), y, torch.tensor(set_y).T, real_index
 
 
-class TedDataModule(DataModule):
+class TedDataModule(DataModule, ABC):
+
+    #TODO: evitar que tenga tantos parámetros, solo el df debería ser suficiente
 
     def __init__(
             self,

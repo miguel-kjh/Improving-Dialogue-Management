@@ -30,6 +30,13 @@ class Policy(pl.LightningModule, ABC):
         super(Policy, self).__init__()
         self.save_hyperparameters(config)
         self.n_actions = n_actions
+        self.test_results = {
+            'Index': [],
+            'Inputs': [],
+            'Labels': [],
+            'Predictions': [],
+            'IsCorrect': []
+        }
 
     def log_metrics(self, name: str, y_hat: torch.Tensor, y: torch.Tensor):
         metrics = self._create_metrics(self.n_actions)

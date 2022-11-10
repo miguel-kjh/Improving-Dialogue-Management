@@ -24,7 +24,6 @@ class MetricService(Pipeline):
 
     def __init__(self, path: str):
         super().__init__()
-        self.priority = 5
         self.path = path
         self.embeddings_file = os.path.join(self.path, 'embeddings.csv')
         self.actions_file = os.path.join(self.path, 'actions.csv')
@@ -62,3 +61,5 @@ class MetricService(Pipeline):
         )
         filename = self.embeddings_file.replace('.csv', '_confusion_matrix.jpg')
         self.output_jpg_service.save(cm, filename)
+
+

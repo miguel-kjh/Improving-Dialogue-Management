@@ -30,7 +30,7 @@ class DiaDataset:
         return state, action, last_pos
 
 
-class DiaDataModule(DataModule):
+class DiaDataModule(DataModule, ABC):
 
     def __init__(self, df: pd.DataFrame, batch_size: int = 32):
         super(DiaDataModule, self).__init__(df)
