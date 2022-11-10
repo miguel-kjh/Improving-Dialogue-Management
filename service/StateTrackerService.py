@@ -56,6 +56,7 @@ class StateTrackerService(Pipeline):
             test, test_labels, set_test_labels, test_indexes = self._get_samples_by_dataset(df_state, 'test')
 
             return TedDataModule(
+                df_state,
                 train,
                 train_labels,
                 set_train_labels,

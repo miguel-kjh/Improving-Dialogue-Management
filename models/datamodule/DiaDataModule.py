@@ -7,6 +7,8 @@ import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
+from models.datamodule.DataModule import DataModule
+
 
 class DiaDataset:
 
@@ -28,20 +30,15 @@ class DiaDataset:
         return state, action, last_pos
 
 
-class DiaDataModule(pl.LightningDataModule, ABC):
+class DiaDataModule(DataModule):
 
     def __init__(self, df: pd.DataFrame, batch_size: int = 32):
-        super(DiaDataModule, self).__init__()
+        super(DiaDataModule, self).__init__(df)
         self.df_train = None
         self.df_dev = None
         self.df_test = None
-        self.df = df
         self._num_features = len(self.df['State'].iloc[0])
         self.batch_size = batch_size
-
-    @property
-    def num_features(self):
-        return self._num_features
 
     def _prepare_data(self, type_data: str) -> DiaDataset:
         df = self.df[self.df['Type'] == type_data]

@@ -1,13 +1,16 @@
+import copy
 import os
 import pickle
 from abc import ABC
 
+import pandas as pd
 import torch
 from typing import Optional, List
 import numpy as np
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
+from models.datamodule.DataModule import DataModule
 from models.transformation.StratifiedSampler import StratifiedSampler
 
 
@@ -51,10 +54,11 @@ class Dataset(torch.utils.data.Dataset):
         return listToTensor(x), y, torch.tensor(set_y).T, real_index
 
 
-class TedDataModule(pl.LightningDataModule, ABC):
+class TedDataModule(DataModule):
 
     def __init__(
             self,
+            df: pd.DataFrame,
             train: np.array,
             label_train: np.array,
             set_labels_train: np.array,
@@ -69,7 +73,7 @@ class TedDataModule(pl.LightningDataModule, ABC):
             test_indexes,
             batch_size: int = 32
     ):
-        super().__init__()
+        super().__init__(df)
         self.sgd_test = None
         self.sgd_val = None
         self.sgd_train = None

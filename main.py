@@ -5,6 +5,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 import hydra
 
+from service.EvaluateService import EvaluateService
 from service.LoadDataService import LoadDataService
 from service.StateTrackerService import StateTrackerService
 from service.TrainAndEvaluateService import TrainAndEvaluateService
@@ -48,6 +49,12 @@ def main(cfg: DictConfig) -> None:
     Logger.print_title("Train and Evaluate")
     train_service = TrainService(cfg, actions)
     trainer = train_service.run(data_module)
+
+    Logger.print_title("Evaluate")
+    evaluate_service = EvaluateService(data_module)
+    test = evaluate_service.run(trainer)
+    print(test)
+    test.to_csv('test.csv', sep=";", index=False)
 
     """train_and_evaluate_service = TrainAndEvaluateService(cfg)
     train_and_evaluate_service.run()
