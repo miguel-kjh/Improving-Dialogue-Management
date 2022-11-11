@@ -5,24 +5,22 @@ from models.dialogue_policy.supervised_learning.utils import GumbelConnector, on
 
 
 class DiaMultiDense(nn.Module):
-    def __init__(self, args, cfg):
+    def __init__(self, cfg):
         super(DiaMultiDense, self).__init__()
-        self.args = args
         self.cfg = cfg
-        self.use_gpu = torch.cuda.is_available()
-        self.dropout = nn.Dropout(p=args.dropout)
+        self.dropout = nn.Dropout(p=cfg.dropout)
         self.a_dim = cfg.a_dim
 
-        self.net = nn.Sequential(nn.Linear(cfg.s_dim, cfg.h_dim),
-                                           nn.ReLU(),
-                                           nn.Linear(cfg.h_dim, cfg.a_dim//4),
-                                           nn.LeakyReLU(0.2, True),)
+        self.net = nn.Sequential(nn.LazyLinear(cfg.h_dim),
+                                 nn.ReLU(),
+                                 nn.Linear(cfg.h_dim, cfg.a_dim // 4),
+                                 nn.LeakyReLU(0.2, True), )
         self.gumbel_length_index = self.cfg.a_dim * [2]
         self.gumbel_num = len(self.gumbel_length_index)
         self.last_layers = nn.ModuleList()
         self.gumbel_connector = GumbelConnector(False)
         for gumbel_width in self.gumbel_length_index:
-            self.last_layers.append(nn.Linear(cfg.a_dim//4, gumbel_width))
+            self.last_layers.append(nn.Linear(cfg.a_dim // 4, gumbel_width))
 
         self.loss = nn.MultiLabelSoftMarginLoss()
 
@@ -39,16 +37,7 @@ class DiaMultiDense(nn.Module):
         pred_act_tsr = onehot2id(action_rep)
         return pred_act_tsr
 
-    def forward(self, s, a_target_gold, beta, s_target_gold=None, s_target_pos=None, train_type='train',  a_target_seq=None,a_target_full=None,a_target_pos=None):
-        """
-        :param s_target_pos:
-        :param s_target_gold: b * h_s where h_s is all 0 if not available
-        :param curriculum:
-        :param beta: prob to use teacher forcing
-        :param a_target_gold: [b, 20]  [x, x, 171, x, x, x, 2, 0, 0, 0, 0, 0, 0]
-        :param s: [b, s_dim]
-        :return: hidden_state after several rollout
-        """
+    def forward(self, s, a_target_gold, s_target_pos):
         mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
         if len(s_target_pos.shape) == 1:
             s_target_pos = s_target_pos.unsqueeze(1)
@@ -76,7 +65,32 @@ class DiaMultiDense(nn.Module):
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
         loss_pred = self.loss(action_rep, id2onehot(proc_tgt_tsr))
-        return torch.FloatTensor([0]), torch.zeros(s.shape[0], self.a_dim), \
-               loss_pred, pred_act_tsr, \
-               torch.FloatTensor([0]), torch.zeros_like(s), torch.FloatTensor([0]), \
-               torch.FloatTensor([0]), torch.zeros(s.shape[0]), torch.zeros(s.shape[0])
+        return loss_pred, pred_act_tsr
+
+
+if __name__ == '__main__':
+    cfg = {}
+    cfg['s_dim'] = 78
+    cfg['h_dim'] = 200
+    cfg['a_dim'] = 10
+    cfg['max_len'] = 10
+    cfg['dropout'] = 0.1
+    cfg['gumbel'] = True
+
+
+    # dict to class
+    class Cfg:
+        def __init__(self, entries):
+            self.__dict__.update(entries)
+
+
+    cfg = Cfg(cfg)
+
+    dia_multi_class = DiaMultiDense(cfg)
+    batch = 64
+    s = torch.rand(batch, 78)
+    a_target_gold = torch.randint(0, 10, (batch, 10))
+    s_target_pos = torch.randint(0, 10, (batch, 1))
+    l, r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
+    print(l)
+    print(r.size())

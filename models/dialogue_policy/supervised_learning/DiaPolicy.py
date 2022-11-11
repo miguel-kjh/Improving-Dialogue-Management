@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import List
 
-import pytorch_lightning as pl
 import torch
 
 from models.dialogue_policy.supervised_learning.DiaMultiClass import DiaMultiClass
@@ -22,7 +21,7 @@ class DiaPolicy(Policy, ABC):
 
     def training_step(self, batch, batch_idx):
         s, a_target_gold, s_target_pos = batch
-        loss, _ = self(s, a_target_gold, s_target_pos)
+        loss, pred = self(s, a_target_gold, s_target_pos)
         self.log("train_loss", loss)
         return loss
 

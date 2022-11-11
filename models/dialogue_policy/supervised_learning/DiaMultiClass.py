@@ -35,21 +35,12 @@ class DiaMultiClass(nn.Module):
                     nn.init.zeros_(param)
 
     def select_action(self, s):
-        if self.args.gumbel:
+        if self.cfg.gumbel:
             return gumbel_sigmoid_sample(self.net(s), 0.001).gt(0)
         else:
             return torch.sigmoid(self.net(s)).gt(0.5)
 
     def forward(self, s, a_target_gold, s_target_pos):
-        """
-        :param s_target_pos:
-        :param s_target_gold: b * h_s where h_s is all 0 if not available
-        :param curriculum:
-        :param beta: prob to use teacher forcing
-        :param a_target_gold: [b, 20]  [x, x, 171, x, x, x, 2, 0, 0, 0, 0, 0, 0]
-        :param s: [b, s_dim]
-        :return: hidden_state after several rollout
-        """
         max_len = a_target_gold.size(1)
         mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1)
         if len(s_target_pos.shape) == 1:

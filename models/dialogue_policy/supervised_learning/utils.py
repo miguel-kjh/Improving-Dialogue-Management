@@ -105,6 +105,8 @@ def cast_type(var, dtype, use_gpu):
 
 def onehot2id(onehot_list):
     id_list = []
+    print()
+    print(onehot_list.size())
     bs, a_dim = onehot_list.shape
     newlist = onehot_list.view(-1)
     for i in range(0, len(newlist), 2):
