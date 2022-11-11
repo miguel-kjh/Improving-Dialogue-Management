@@ -55,10 +55,11 @@ class EvaluateService(Pipeline):
         assert isinstance(data, pl.Trainer), "Data must be of type Trainer"
         test = data.test(datamodule=self.data)
         test_results = data.model.test_results
-        self._update_test_results(test_results)
-
         test_results = pd.DataFrame(test_results)
         test = pd.DataFrame(test)
+        """self._update_test_results(test_results)
+
+        test_results = pd.DataFrame(test_results)
         test_results = test_results[[
             'Index',
             'Inputs',
@@ -72,6 +73,6 @@ class EvaluateService(Pipeline):
             'Slots',
             'Prev_actions',
             'Ranking',
-        ]]
+        ]]"""
         wandb.finish()
         return test_results, test

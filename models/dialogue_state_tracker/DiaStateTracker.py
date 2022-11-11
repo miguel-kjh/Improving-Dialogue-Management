@@ -42,6 +42,10 @@ class DiaStateTracker(StateTracker):
                     action)] = 1
         return emb
 
+
+
+
+
     def create(
             self,
             df_data_oring: pd.DataFrame,
@@ -54,12 +58,10 @@ class DiaStateTracker(StateTracker):
         actions_db = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         slots = sorted(list(set(np.hstack(df_data[self._slots_column].values))))
-        mandatory_slots = sorted(list(set(np.hstack(df_data[self._mandatory_slot_column].values))))
-        optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
         entities = sorted(list(set(np.hstack(df_data[self._entity_column].values))))
         tasks = sorted(list(set(np.hstack(df_data[self._task_column].values))))
         dialogue_state = self._get_schema_dialogue_state_dataset()
-        slots_by_domains = self._get_slots_by_domain(df_data)
+        dialogue_state['Last_position'] = []
 
         df_data = df_data.groupby(by='Dialogue ID')
         for id_, df_group in tqdm(df_data, desc='StateTracker'):
@@ -80,8 +82,10 @@ class DiaStateTracker(StateTracker):
                     db_slots=slots
                 )
                 y_actions = np.zeros(len(actions_db))
+                last_idx = 0
                 for idx, action in enumerate(row[column_for_actions]):
-                    y_actions[idx] = actions_db.index(action) + 1
+                    y_actions[idx] = actions_db.index(action)
+                    last_idx = idx
                 self._add_state_to_schema(
                     dialogue_state,
                     id_,
@@ -93,6 +97,7 @@ class DiaStateTracker(StateTracker):
                     row['Type'],
                     emb
                 )
+                dialogue_state['Last_position'].append(last_idx)
                 last_action = copy(actions)
 
         df = pd.DataFrame(dialogue_state)

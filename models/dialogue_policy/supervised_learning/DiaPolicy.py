@@ -5,36 +5,36 @@ import pytorch_lightning as pl
 import torch
 
 from models.dialogue_policy.supervised_learning.DiaMultiClass import DiaMultiClass
+from models.dialogue_policy.supervised_learning.Policy import Policy
 
 
-class DiaPolicy(pl.LightningModule, ABC):
+class DiaPolicy(Policy, ABC):
 
     def __init__(self, config: dict, actions: List[int]) -> None:
-        super(DiaPolicy, self).__init__()
-        config['a_dim'] = len(actions)
+        super(DiaPolicy, self).__init__(config, len(actions))
+        config['a_dim'] = self.n_actions
         self.save_hyperparameters(config)
         # TODO: add all models for dia.yaml: DiaMultiClass.py, DiaMultiDense.py, seq.py
         self.net = DiaMultiClass(self.hparams)
-        self.n_actions = len(actions)
 
     def forward(self, s, a_target_gold, s_target_pos=None):
         return self.net(s, a_target_gold, s_target_pos)
 
     def training_step(self, batch, batch_idx):
         s, a_target_gold, s_target_pos = batch
-        loss, _ = self.net(s, a_target_gold, s_target_pos)
+        loss, _ = self(s, a_target_gold, s_target_pos)
         self.log("train_loss", loss)
         return loss
 
     def validation_step(self, batch, batch_idx):
         s, a_target_gold, s_target_pos = batch
-        loss, _ = self.net(s, a_target_gold, s_target_pos)
+        loss, _ = self(s, a_target_gold, s_target_pos)
         self.log("val_loss", loss)
         return loss
 
     def test_step(self, batch, batch_idx):
         s, a_target_gold, s_target_pos = batch
-        loss, _ = self.net(s, a_target_gold, s_target_pos)
+        loss, _ = self(s, a_target_gold, s_target_pos)
         self.log("test_loss", loss)
         return loss
 

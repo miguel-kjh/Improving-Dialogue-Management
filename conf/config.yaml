@@ -2,9 +2,9 @@ database:
   - path: mongodb://localhost:27017
 defaults:
   - dataset: sgd.yaml
-  - state: ted.yaml
-  - model: ted.yaml
+  - state: dia.yaml
+  - model: dia.yaml
 resources:
   gpus: 0
   seed: 2020
-  wandb: False
+  wandb: false

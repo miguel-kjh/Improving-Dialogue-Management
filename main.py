@@ -73,7 +73,8 @@ class Main:
 
     def _train(self, data_module: DataModule) -> pl.Trainer:
         Logger.print_title("Train")
-        train_service = TrainService(self._config, data_module.classes)
+        name_experiment = os.path.basename(self._folder)
+        train_service = TrainService(self._config, data_module.classes, name_experiment)
         trainer = train_service.run(data_module)
         return trainer
 

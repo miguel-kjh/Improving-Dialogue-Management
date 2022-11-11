@@ -50,10 +50,6 @@ class DiaMultiClass(nn.Module):
         :param s: [b, s_dim]
         :return: hidden_state after several rollout
         """
-        print("s:", s.size())
-        print("a_target_gold:", a_target_gold.size())
-        print("s_target_pos:", s_target_pos.size())
-        print(s_target_pos)
         max_len = a_target_gold.size(1)
         mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1)
         if len(s_target_pos.shape) == 1:
@@ -68,8 +64,6 @@ class DiaMultiClass(nn.Module):
             temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
             src_tsr = torch.ones_like(eval_a_sample).float()
-            print("src_tsr:", src_tsr.size())
-            print("eval_a_sample:", eval_a_sample.size())
             temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val #TODO: check this
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
@@ -105,6 +99,6 @@ if __name__ == '__main__':
     batch = 64
     s = torch.rand(batch, 78)
     a_target_gold = torch.rand(batch, 10)
-    s_target_pos = torch.rand(batch, 1)
+    s_target_pos = torch.randint(0, 10, (batch, 1))
     r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
     print(r)

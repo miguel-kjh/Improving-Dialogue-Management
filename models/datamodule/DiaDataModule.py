@@ -3,7 +3,6 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-import pytorch_lightning as pl
 import torch
 from torch.utils.data import DataLoader
 
@@ -24,9 +23,9 @@ class DiaDataset:
     def __getitem__(self, index):
         """Generates one sample of data"""
         row = self.df.iloc[index]
-        state = torch.tensor(row['State'].tolist(), dtype=torch.float32)
-        action = torch.tensor(row['Set_Label'].tolist(), dtype=torch.float32)
-        last_pos = torch.tensor([np.where(action != 0)[0][-1]], dtype=torch.int32)
+        state = torch.tensor(row['State'].tolist())
+        action = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
+        last_pos = torch.tensor(row['Last_position'], dtype=torch.long)
         return state, action, last_pos
 
 

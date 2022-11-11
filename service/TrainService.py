@@ -11,14 +11,14 @@ import pytorch_lightning as pl
 
 class TrainService(Pipeline):
 
-    def __init__(self, config: dict, actions: List[int]):
+    def __init__(self, config: dict, actions: List[int], name_experiment: str):
         super().__init__()
         self.config = config
         self.model_config = config['model']
         self.activate_wandb_logging = self.config['resources']['wandb']
         self.actions = list(range(len(actions)))
         self.name = self.config['dataset']['name']
-        self.name_experiment = "dummy"  # TODO: change name to something more meaningful
+        self.name_experiment = name_experiment
 
     @staticmethod
     def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
