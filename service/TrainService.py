@@ -2,7 +2,9 @@ from typing import List
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
-from models.dialogue_policy.supervised_learning.DiaPolicy import DiaPolicy
+from models.dialogue_policy.supervised_learning.ClassificationPolicy import ClassificationPolicy
+from models.dialogue_policy.supervised_learning.DiaMultiClassPolicy import DiaMultiClassPolicy
+from models.dialogue_policy.supervised_learning.DiaMultiDensePolicy import DiaMultiDensePolicy
 from models.dialogue_policy.supervised_learning.Ted import Ted
 from models.dialogue_policy.supervised_learning.Red import Red
 from service.Pipeline import Pipeline
@@ -17,17 +19,16 @@ class TrainService(Pipeline):
         self.model_config = config['model']
         self.activate_wandb_logging = self.config['resources']['wandb']
         self.actions = list(range(len(actions)))
-        self.name = self.config['dataset']['name']
         self.name_experiment = name_experiment
-
-    @staticmethod
-    def get_model(model: str, config: dict, actions: List[int]) -> pl.LightningModule:
-        models = {
+        self._models = {
             "TED": Ted,
             "RED": Red,
-            "DIA": DiaPolicy
+            "MC": DiaMultiClassPolicy,
+            "MD": DiaMultiDensePolicy,
         }
-        return models[model](config, actions)
+
+    def get_model(self, model: str, config: dict, actions: List[int]) -> pl.LightningModule:
+        return self._models[model](config, actions)
 
     @staticmethod
     def __get_callbacks() -> list:

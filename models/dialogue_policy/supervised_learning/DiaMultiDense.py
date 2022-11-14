@@ -59,7 +59,11 @@ class DiaMultiDense(nn.Module):
 
         for i in range(self.cfg.max_len):
             temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
-            eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
+            try:
+                eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
+                #print("Index: ", i, "eval_a_sample: ", eval_a_sample)
+            except:
+                break
             src_tsr = torch.ones_like(eval_a_sample).float()
             temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
@@ -87,10 +91,14 @@ if __name__ == '__main__':
     cfg = Cfg(cfg)
 
     dia_multi_class = DiaMultiDense(cfg)
-    batch = 64
+    batch = 34
     s = torch.rand(batch, 78)
-    a_target_gold = torch.randint(0, 10, (batch, 10))
-    s_target_pos = torch.randint(0, 10, (batch, 1))
+    a_target_gold = torch.tensor(
+        [[6, 6, 9, 0, 0, 0, 0, 0, 0, 0]] * batch
+    )
+    print(a_target_gold)
+    s_target_pos = torch.tensor([3] * batch)
+    print(s_target_pos)
     l, r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
     print(l)
     print(r.size())

@@ -118,12 +118,6 @@ def main(cfg: DictConfig) -> None:
 
     main_program = Main(cfg)
     main_program.run()
-    """from torchmetrics import F1
-    target = torch.randint(0, 2, (10, 3))
-    preds = torch.randint(0, 2, (10, 3))
-    f1 = F1(num_classes=3, mdmc_average='global', multiclass=True)
-    value = f1(preds, target)
-    print(value)"""
 
 
 if __name__ == "__main__":

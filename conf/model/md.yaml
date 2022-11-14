@@ -4,12 +4,10 @@ h_dim: 200
 a_dim: -1
 gumbel: true
 dropout: 0.1
-"clip": 0.5
-"curriculum": 1
 batch_size: 32
-epochs: 100
+epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
-name: "DIA"
+name: "MD"
 class_correction: False

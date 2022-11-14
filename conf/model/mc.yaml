@@ -1,0 +1,13 @@
+s_dim: -1
+max_len: 20
+h_dim: 200
+a_dim: -1
+gumbel: true
+dropout: 0.1
+batch_size: 32
+epochs: 10
+opt: "Adam"
+activation: "relu"
+lr: 1e-3
+name: "MC"
+class_correction: False
