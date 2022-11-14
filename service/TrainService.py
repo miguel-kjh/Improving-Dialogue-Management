@@ -2,7 +2,7 @@ from typing import List
 from pytorch_lightning.callbacks import EarlyStopping
 from pytorch_lightning.loggers import WandbLogger
 
-from models.dialogue_policy.supervised_learning.ClassificationPolicy import ClassificationPolicy
+from models.dialogue_policy.supervised_learning.DiaSeqPolicy import DiaSeqPolicy
 from models.dialogue_policy.supervised_learning.DiaMultiClassPolicy import DiaMultiClassPolicy
 from models.dialogue_policy.supervised_learning.DiaMultiDensePolicy import DiaMultiDensePolicy
 from models.dialogue_policy.supervised_learning.Ted import Ted
@@ -25,6 +25,7 @@ class TrainService(Pipeline):
             "RED": Red,
             "MC": DiaMultiClassPolicy,
             "MD": DiaMultiDensePolicy,
+            "SEQ": DiaSeqPolicy
         }
 
     def get_model(self, model: str, config: dict, actions: List[int]) -> pl.LightningModule:

@@ -48,11 +48,9 @@ class ClassificationPolicy(Policy, ABC):
 
     def test_step(self, batch, batch_idx):
         s, a_target_gold, s_target_pos = batch
-        loss, pred = self(s, a_target_gold, s_target_pos)
-        self.log("test_loss", loss)
+        _, pred = self(s, a_target_gold, s_target_pos)
         pred, a_target_gold = self._transfrom_tensors_for_prediction(pred, a_target_gold)
         self.log_metrics('test', pred, a_target_gold, multiclass=True)
-        return loss
 
     def configure_optimizers(self):
         return getattr(torch.optim, self.hparams.opt)(self.parameters(), lr=self.hparams.lr)
