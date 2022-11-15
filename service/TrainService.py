@@ -20,6 +20,7 @@ class TrainService(Pipeline):
         self.activate_wandb_logging = self.config['resources']['wandb']
         self.actions = list(range(len(actions)))
         self.name_experiment = name_experiment
+        self.name = config['dataset']['name']
         self._models = {
             "TED": Ted,
             "RED": Red,
