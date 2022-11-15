@@ -1,4 +1,4 @@
 name: "ted"
-intention: "Intention"
-action: "Action"
+intention: "Atomic Intent"
+action: "Atomic Action"
 max_history: 5

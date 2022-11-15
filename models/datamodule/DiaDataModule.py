@@ -24,9 +24,10 @@ class DiaDataset:
         """Generates one sample of data"""
         row = self.df.iloc[index]
         state = torch.tensor(row['State'].tolist())
-        action = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
+        a_target_gold = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
         last_pos = torch.tensor(row['Last_position'], dtype=torch.long)
-        return state, action, last_pos
+        actions = torch.tensor(row['Real_label'], dtype=torch.long)
+        return state, a_target_gold, last_pos, actions
 
 
 class DiaDataModule(DataModule, ABC):

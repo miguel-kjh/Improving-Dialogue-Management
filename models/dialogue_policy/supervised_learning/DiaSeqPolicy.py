@@ -14,23 +14,23 @@ class DiaSeqPolicy(ClassificationPolicy):
         return self.net(s, type, s_target_seq)
 
     def training_step(self, batch, batch_idx):
-        s, s_target_seq, _ = batch
+        s, s_target_seq, _, actions = batch
         loss, pred = self(s, s_target_seq=s_target_seq)
         self.log("train_loss", loss)
-        pred, s_target_seq = self._transfrom_tensors_for_prediction(pred, s_target_seq)
-        self.log_metrics('train', pred, s_target_seq, multiclass=True)
+        pred, s_target_seq = self._transfrom_tensors_for_prediction(pred, actions)
+        self.log_metrics('train', pred, actions, multiclass=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        s, s_target_seq, _ = batch
+        s, s_target_seq, _, actions = batch
         loss, pred = self(s, type='val', s_target_seq=s_target_seq)
         self.log("val_loss", loss)
-        pred, s_target_seq = self._transfrom_tensors_for_prediction(pred, s_target_seq)
-        self.log_metrics('val', pred, s_target_seq, multiclass=True)
+        pred, s_target_seq = self._transfrom_tensors_for_prediction(pred, actions)
+        self.log_metrics('val', pred, actions, multiclass=True)
         return loss
 
     def test_step(self, batch, batch_idx):
-        s, s_target_seq, _ = batch
+        s, s_target_seq, _, actions = batch
         _, pred = self(s, type='test', s_target_seq=s_target_seq)
-        pred, a_target_gold = self._transfrom_tensors_for_prediction(pred, s_target_seq)
-        self.log_metrics('test', pred, s_target_seq, multiclass=True)
+        pred, a_target_gold = self._transfrom_tensors_for_prediction(pred, actions)
+        self.log_metrics('test', pred, actions, multiclass=True)

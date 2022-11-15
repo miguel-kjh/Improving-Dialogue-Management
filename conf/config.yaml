@@ -1,7 +1,7 @@
 database:
   - path: mongodb://localhost:27017
 defaults:
-  - dataset: sgd.yaml
+  - dataset: synthetic.yaml
   - state: dia.yaml
   - model: seq.yaml
 resources:

@@ -61,7 +61,7 @@ class Main:
         self.output_csv_service = OutputCsvService()
 
     def _load_data(self) -> pd.DataFrame:
-        Logger.print_title("Load Data")
+        Logger.print_title(f"Load Data: {self._config.dataset.name}")
         load_data_service = LoadDataService(self._config)
         return load_data_service.run()
 
@@ -118,6 +118,23 @@ def main(cfg: DictConfig) -> None:
 
     main_program = Main(cfg)
     main_program.run()
+    """import torch
+    from torchmetrics import Precision, Accuracy, Recall, F1
+    preds = torch.tensor([1, 0, 0, 0])
+    target = torch.tensor([0, 0, 1, 1])
+    precision = Precision(average='macro', num_classes=2)
+    print(precision(preds, target))
+
+    # do accuracy, recall, f1
+    accuracy = Accuracy()
+    print(accuracy(preds, target))
+
+    recall = Recall(average='macro', num_classes=2)
+    print(recall(preds, target))
+
+    f1 = F1(average='macro', num_classes=2)
+    print(f1(preds, target))"""
+
 
 
 if __name__ == "__main__":

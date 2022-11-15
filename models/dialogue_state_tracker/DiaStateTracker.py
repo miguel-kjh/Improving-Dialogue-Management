@@ -42,10 +42,6 @@ class DiaStateTracker(StateTracker):
                     action)] = 1
         return emb
 
-
-
-
-
     def create(
             self,
             df_data_oring: pd.DataFrame,
@@ -62,6 +58,8 @@ class DiaStateTracker(StateTracker):
         tasks = sorted(list(set(np.hstack(df_data[self._task_column].values))))
         dialogue_state = self._get_schema_dialogue_state_dataset()
         dialogue_state['Last_position'] = []
+        dialogue_state['Real_label'] = []
+        mx_history_length = len(actions_db)
 
         df_data = df_data.groupby(by='Dialogue ID')
         for id_, df_group in tqdm(df_data, desc='StateTracker'):
@@ -81,10 +79,12 @@ class DiaStateTracker(StateTracker):
                     slots=total_slots,
                     db_slots=slots
                 )
-                y_actions = np.zeros(len(actions_db))
+                y_actions = np.zeros(mx_history_length)
+                real_label = np.zeros(len(actions_db))
                 last_idx = 0
                 for idx, action in enumerate(row[column_for_actions]):
                     y_actions[idx] = actions_db.index(action)
+                    real_label[actions_db.index(action)] = 1
                     last_idx = idx
                 self._add_state_to_schema(
                     dialogue_state,
@@ -98,6 +98,7 @@ class DiaStateTracker(StateTracker):
                     emb
                 )
                 dialogue_state['Last_position'].append(last_idx)
+                dialogue_state['Real_label'].append(real_label)
                 last_action = copy(actions)
 
         df = pd.DataFrame(dialogue_state)
@@ -117,10 +118,8 @@ def main():
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions
     )
-    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False, sep=';')
+    df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False, sep=';')
 
-    """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
-                             f"max_history={max_history_length}")"""
     embeddings = np.array(df['State'].tolist())
     print(embeddings.shape)
     print(embeddings[0][0])

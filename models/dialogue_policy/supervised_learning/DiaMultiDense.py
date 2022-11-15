@@ -61,7 +61,6 @@ class DiaMultiDense(nn.Module):
             temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
             try:
                 eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
-                #print("Index: ", i, "eval_a_sample: ", eval_a_sample)
             except:
                 break
             src_tsr = torch.ones_like(eval_a_sample).float()

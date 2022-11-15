@@ -1,5 +1,5 @@
 s_dim: -1
-max_len: 10
+max_len: 3
 h_dim: 200
 a_dim: -1
 gumbel: true

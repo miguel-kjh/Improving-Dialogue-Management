@@ -1,5 +1,5 @@
-embed_size: 78
-max_len: 10
+embed_size: 61
+max_len: 11
 h_dim: 200
 a_dim: -1
 beam: true
