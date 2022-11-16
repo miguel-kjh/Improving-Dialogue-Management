@@ -8,7 +8,7 @@ num_layers: 1
 transformer_size: 128
 unidirectional_encoder: true
 embedding_space: 20
-num_neg: 5
+num_neg: 1
 regularization_constant: 1e-3
 dropout_attention: 0.0
 dropout_hidden: 0.0

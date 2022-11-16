@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import Optional
 
-import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import DataLoader
@@ -13,7 +12,6 @@ class DiaDataset:
 
     def __init__(self, df: pd.DataFrame):
         """Initialization"""
-
         self.df = df
 
     def __len__(self):
@@ -27,11 +25,7 @@ class DiaDataset:
         a_target_gold = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
         last_pos = torch.tensor(row['Last_position'], dtype=torch.long)
         actions = torch.tensor(row['Real_label'], dtype=torch.long)
-        interaction_log = [
-            index,
-            row['Dialogue_ID'],
-        ]
-        return state, a_target_gold, last_pos, actions, interaction_log
+        return state, a_target_gold, last_pos, actions, index
 
 
 class DiaDataModule(DataModule, ABC):

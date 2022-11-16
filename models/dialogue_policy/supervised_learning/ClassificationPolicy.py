@@ -17,12 +17,15 @@ class ClassificationPolicy(Policy, ABC):
     def forward(self, s, a_target_gold, s_target_pos=None):
         return self.net(s, a_target_gold, s_target_pos)
 
+    def _update_test_log(self, s, actions, pred, log):
+        for idx in range(s.size(0)):
+            self.test_results['Index'] += [log[idx].item()]
+            self.test_results['Inputs'] += [s[idx]]
+            self.test_results['Labels'] += [actions[idx]]
+            self.test_results['Predictions'] += [pred[idx]]
+            self.test_results['IsCorrect'] += [all(actions[idx] == pred[idx])]
+
     def _transfrom_tensors_for_prediction(self, x, y) -> Tuple[torch.Tensor, torch.Tensor]:
-        """index_tensor = torch.arange(0, x.shape[1])
-        index_tensor = index_tensor.repeat(x.shape[0], 1)
-        pred = torch.where(x > 0, index_tensor, torch.zeros_like(x))
-        x_hat = torch.sort(y, dim=1)[0]
-        y_hat = torch.sort(pred, dim=1)[0]"""
         x_hat = x.type(torch.int64)
         y_hat = y.type(torch.int64)
         return x_hat, y_hat
