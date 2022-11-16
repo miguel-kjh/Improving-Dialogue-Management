@@ -28,7 +28,7 @@ class ClassificationPolicy(Policy, ABC):
         return x_hat, y_hat
 
     def training_step(self, batch, batch_idx):
-        s, a_target_gold, s_target_pos, actions = batch
+        s, a_target_gold, s_target_pos, actions, _ = batch
         loss, pred = self(s, a_target_gold, s_target_pos)
         self.log("train_loss", loss)
         pred, actions = self._transfrom_tensors_for_prediction(pred, actions)
@@ -36,7 +36,7 @@ class ClassificationPolicy(Policy, ABC):
         return loss
 
     def validation_step(self, batch, batch_idx):
-        s, a_target_gold, s_target_pos, actions = batch
+        s, a_target_gold, s_target_pos, actions, _ = batch
         loss, pred = self(s, a_target_gold, s_target_pos)
         self.log("val_loss", loss)
         pred, actions = self._transfrom_tensors_for_prediction(pred, actions)
@@ -44,10 +44,11 @@ class ClassificationPolicy(Policy, ABC):
         return loss
 
     def test_step(self, batch, batch_idx):
-        s, a_target_gold, s_target_pos, actions = batch
+        s, a_target_gold, s_target_pos, actions, log = batch
         _, pred = self(s, a_target_gold, s_target_pos)
         pred, actions = self._transfrom_tensors_for_prediction(pred, actions)
         self.log_metrics('test', pred, actions, multiclass=True)
+        self._update_test_log(s, actions, pred, log)
 
     def configure_optimizers(self):
         return getattr(torch.optim, self.hparams.opt)(self.parameters(), lr=self.hparams.lr)

@@ -27,7 +27,11 @@ class DiaDataset:
         a_target_gold = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
         last_pos = torch.tensor(row['Last_position'], dtype=torch.long)
         actions = torch.tensor(row['Real_label'], dtype=torch.long)
-        return state, a_target_gold, last_pos, actions
+        interaction_log = [
+            index,
+            row['Dialogue_ID'],
+        ]
+        return state, a_target_gold, last_pos, actions, interaction_log
 
 
 class DiaDataModule(DataModule, ABC):

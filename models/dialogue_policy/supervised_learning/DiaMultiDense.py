@@ -69,35 +69,3 @@ class DiaMultiDense(nn.Module):
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
         loss_pred = self.loss(action_rep, id2onehot(proc_tgt_tsr))
         return loss_pred, pred_act_tsr
-
-
-if __name__ == '__main__':
-    cfg = {}
-    cfg['s_dim'] = 78
-    cfg['h_dim'] = 200
-    cfg['a_dim'] = 10
-    cfg['max_len'] = 10
-    cfg['dropout'] = 0.1
-    cfg['gumbel'] = True
-
-
-    # dict to class
-    class Cfg:
-        def __init__(self, entries):
-            self.__dict__.update(entries)
-
-
-    cfg = Cfg(cfg)
-
-    dia_multi_class = DiaMultiDense(cfg)
-    batch = 34
-    s = torch.rand(batch, 78)
-    a_target_gold = torch.tensor(
-        [[6, 6, 9, 0, 0, 0, 0, 0, 0, 0]] * batch
-    )
-    print(a_target_gold)
-    s_target_pos = torch.tensor([3] * batch)
-    print(s_target_pos)
-    l, r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
-    print(l)
-    print(r.size())

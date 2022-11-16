@@ -3,6 +3,7 @@ from abc import ABC
 import pytorch_lightning as pl
 import torch
 import torchmetrics
+from tqdm import tqdm
 
 
 class Policy(pl.LightningModule, ABC):
@@ -62,12 +63,22 @@ class Policy(pl.LightningModule, ABC):
         self.save_hyperparameters(config)
         self.n_actions = n_actions
         self.test_results = {
+            'Dialogue_ID': [],
             'Index': [],
             'Inputs': [],
             'Labels': [],
             'Predictions': [],
-            'IsCorrect': []
+            'IsCorrect': [],
         }
+
+    def _update_test_log(self, s, actions, pred, log):
+        for idx in range(s.size(0)):
+            self.test_results['Index'] += [log[0][idx].item()]
+            self.test_results['Dialogue_ID'] += [log[1][idx]]
+            self.test_results['Inputs'] += [s[idx]]
+            self.test_results['Labels'] += [actions[idx]]
+            self.test_results['Predictions'] += [pred[idx]]
+            self.test_results['IsCorrect'] += [all(actions[idx] == pred[idx])]
 
     def log_metrics(self, name: str, y_hat: torch.Tensor, y: torch.Tensor, multiclass: bool = False) -> None:
 

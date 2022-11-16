@@ -106,6 +106,7 @@ class BinaryStateTracker(StateTracker):
                     dialogue_state,
                     id_,
                     row[column_for_intentions],
+                    row['Entities'],
                     total_slots,
                     last_action,
                     action,
@@ -132,6 +133,7 @@ class BinaryStateTracker(StateTracker):
                         dialogue_state,
                         id_,
                         [],
+                        row['Entities'],
                         total_slots,
                         last_action,
                         action,
@@ -147,11 +149,11 @@ class BinaryStateTracker(StateTracker):
 
 
 def main():
-    mongodb_service = MongoDB("synthetic_dialogues", "mongodb://localhost:27017")
-    df = mongodb_service.load("syn_example_4_multidomain_ALL")
+    mongodb_service = MongoDB("SGD", "mongodb://localhost:27017")
+    df = mongodb_service.load("SGD_dataset_TINY")
     assert not df.empty, "Dataframe is empty"
     state_tracker = BinaryStateTracker()
-    column_for_intentions = 'Atomic Intent'
+    column_for_intentions = 'Intention'
     column_for_actions = 'Action'
     max_history_length = 5
     df = state_tracker.create(
@@ -161,7 +163,7 @@ def main():
         mx_history_length=max_history_length
     )
     print(len(df['State'][0]), len(df['State'][0][0]))
-    # df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
+    df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False)
 
     """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
                              f"max_history={max_history_length}")"""

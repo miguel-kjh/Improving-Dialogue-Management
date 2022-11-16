@@ -90,6 +90,7 @@ class DiaStateTracker(StateTracker):
                     dialogue_state,
                     id_,
                     row[column_for_intentions],
+                    row['Entities'],
                     total_slots,
                     last_action,
                     actions,

@@ -17,6 +17,7 @@ class StateTracker(ABC):
         self._columns_for_schema = [
             'Dialogue_ID',
             'Intention',
+            'Entities',
             'Slots',
             'Prev_action',
             'Label',
@@ -36,6 +37,7 @@ class StateTracker(ABC):
             schema: dict,
             id: str,
             intention: list,
+            entities: list,
             slots: list,
             prev_action: str,
             label: str,
@@ -45,6 +47,7 @@ class StateTracker(ABC):
     ):
         schema['Dialogue_ID'].append(id)
         schema['Intention'].append(intention)
+        schema['Entities'].append(entities)
         schema['Slots'].append(slots)
         schema['Prev_action'].append(prev_action)
         schema['Label'].append(label)
