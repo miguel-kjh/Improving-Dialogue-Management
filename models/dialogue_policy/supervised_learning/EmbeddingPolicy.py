@@ -16,8 +16,8 @@ from models.dialogue_policy.supervised_learning.StarSpace import StarSpace
 
 class EmbeddingPolicy(Policy):
 
-    def __init__(self, config: dict, actions: List[int]):
-        super(EmbeddingPolicy, self).__init__(config, len(actions))
+    def __init__(self, config: dict, actions: List[int], embedding_size: int):
+        super(EmbeddingPolicy, self).__init__(config, len(actions), embedding_size)
 
         self.actions_one_hot = F.one_hot(torch.tensor(actions, device=self.device), self.n_actions).float()
 

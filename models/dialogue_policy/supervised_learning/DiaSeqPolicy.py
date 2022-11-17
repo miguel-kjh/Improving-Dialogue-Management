@@ -6,8 +6,10 @@ from models.dialogue_policy.supervised_learning.DiaSeq import DiaSeq
 
 class DiaSeqPolicy(ClassificationPolicy):
 
-    def __init__(self, config: dict, actions: List[int]) -> None:
-        super().__init__(config, actions)
+    def __init__(self, config: dict, actions: List[int], embedding_size) -> None:
+        config['embed_size'] = embedding_size
+        config['max_len'] = len(actions)
+        super().__init__(config, actions, embedding_size)
         self.net = DiaSeq(self.hparams)
 
     def forward(self, s, type='train', s_target_seq=None):

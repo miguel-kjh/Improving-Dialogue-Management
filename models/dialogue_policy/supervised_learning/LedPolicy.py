@@ -2,14 +2,14 @@ from abc import ABC
 
 from torch import nn as nn
 
-from models.dialogue_policy.supervised_learning.EmbeddingPolicy_v1 import EmbeddingPolicy
+from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
 from utils.ted_utils import create_embedding_layer
 
 
 class Led(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, n_actions: int):
-        super().__init__(config, n_actions)
+    def __init__(self, config: dict, n_actions: int, embedding_size: int):
+        super().__init__(config, n_actions, embedding_size)
 
         self.model = nn.LSTM(input_size=self.num_features,
                              hidden_size=self.hparams.hidden_size,

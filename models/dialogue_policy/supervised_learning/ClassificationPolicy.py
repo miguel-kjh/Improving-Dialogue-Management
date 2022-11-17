@@ -8,8 +8,8 @@ from models.dialogue_policy.supervised_learning.Policy import Policy
 
 class ClassificationPolicy(Policy, ABC):
 
-    def __init__(self, config: dict, actions: List[int]) -> None:
-        super(ClassificationPolicy, self).__init__(config, len(actions))
+    def __init__(self, config: dict, actions: List[int], embedding_size: int) -> None:
+        super(ClassificationPolicy, self).__init__(config, len(actions), embedding_size)
         config['a_dim'] = self.n_actions
         self.save_hyperparameters(config)
         self.net = None

@@ -9,6 +9,7 @@ class DiaSeq(nn.Module):
     def __init__(self, cfg):
         super(DiaSeq, self).__init__()
         self.cfg = cfg
+        print(cfg)
         self.decoder_hidden = cfg.h_dim // 2
         self.net = nn.Sequential(nn.LazyLinear(cfg.h_dim),
                                  nn.ReLU(),

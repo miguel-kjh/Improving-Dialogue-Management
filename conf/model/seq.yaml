@@ -1,12 +1,12 @@
-embed_size: 61
-max_len: 11
+embed_size: -1
+max_len: -1
 h_dim: 200
 a_dim: -1
 beam: true
 temperature: 1e-3
 dropout: 0.1
 batch_size: 32
-epochs: 10
+epochs: 1
 opt: "Adam"
 activation: "relu"
 lr: 1e-3

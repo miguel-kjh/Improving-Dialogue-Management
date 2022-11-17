@@ -28,8 +28,8 @@ def get_tgt_mask(size) -> torch.tensor:
 
 class Ted(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, n_actions: List[int]):
-        super().__init__(config, n_actions)
+    def __init__(self, config: dict, n_actions: List[int], embedding_size: int):
+        super().__init__(config, n_actions, embedding_size)
 
         self.pos_encoder = PositionalEncoding(
             self.hparams.encoding_dimension,

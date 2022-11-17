@@ -26,3 +26,7 @@ class Logger:
     @staticmethod
     def warning(msg: str, **kwargs):
         print('WARNING: ' + msg, **kwargs)
+
+    @staticmethod
+    def error(msg: str, **kwargs):
+        print('ERROR: ' + msg, **kwargs)

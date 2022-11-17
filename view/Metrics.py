@@ -112,7 +112,7 @@ class Metrics:
 
         return _plot_figure(pd.DataFrame(df), actions_dict)
 
-    @abstractmethod
+    @staticmethod
     def plot_confusion_matrix(
             predictions: list,
             real_labels: list,

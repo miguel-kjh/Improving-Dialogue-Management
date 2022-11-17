@@ -3,7 +3,7 @@ database:
 defaults:
   - dataset: synthetic.yaml
   - state: dia.yaml
-  - model: mc.yaml
+  - model: seq.yaml
 resources:
   gpus: 0
   seed: 2020

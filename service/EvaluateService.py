@@ -67,11 +67,15 @@ class EvaluateService(Pipeline):
         labels = np.hstack(test_results['Labels'].values).tolist()
         predictions = np.hstack(test_results['Predictions'].values).tolist()
         if predictions:
-            return Metrics.plot_confusion_matrix(
-                labels,
-                predictions,
-                title='Confusion matrix',
-            )
+            try:
+                return Metrics.plot_confusion_matrix(
+                    labels,
+                    predictions,
+                    title='Confusion matrix',
+                )
+            except ValueError:
+                Logger.error('Confusion matrix cannot be created')
+                return None
         else:
             Logger.warning('No predictions were made')
             return None

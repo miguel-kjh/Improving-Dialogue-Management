@@ -29,8 +29,8 @@ class TrainService(Pipeline):
             "SEQ": DiaSeqPolicy
         }
 
-    def get_model(self, model: str, config: dict, actions: List[int]) -> pl.LightningModule:
-        return self._models[model](config, actions)
+    def get_model(self, model: str, config: dict, actions: List[int], embedding_size: int) -> pl.LightningModule:
+        return self._models[model](config, actions, embedding_size)
 
     @staticmethod
     def __get_callbacks() -> list:
@@ -61,6 +61,6 @@ class TrainService(Pipeline):
 
     def run(self, data: object = None) -> object:
         assert isinstance(data, pl.LightningDataModule), "Data must be of type LightningDataModule"
-        model = self.get_model(self.model_config['name'], self.model_config, self.actions)
+        model = self.get_model(self.model_config['name'], self.model_config, self.actions, data.num_features)
         trainer = self._fit(model, data)
         return trainer

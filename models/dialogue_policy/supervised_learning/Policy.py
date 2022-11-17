@@ -57,10 +57,11 @@ class Policy(pl.LightningModule, ABC):
         }
         return metrics
 
-    def __init__(self, config: dict, n_actions: int) -> None:
+    def __init__(self, config: dict, n_actions: int, embedding_size: int) -> None:
         super(Policy, self).__init__()
         self.save_hyperparameters(config)
         self.n_actions = n_actions
+        self.embedding_size = embedding_size
         self.test_results = {
             'Dialogue_ID': [],
             'Index': [],
