@@ -11,8 +11,8 @@ import hydra
 
 from models.datamodule.DataModule import DataModule
 from service.EvaluateService import EvaluateService
-from service.InputOutput.InputCsvService import InputCsvService
 from service.InputOutput.OutputCsvService import OutputCsvService
+from service.InputOutput.OutputJpgService import OutputJpgService
 from service.LoadDataService import LoadDataService
 from service.StateTrackerService import StateTrackerService
 import pytorch_lightning as pl
@@ -59,6 +59,7 @@ class Main:
         create_folder(self._folder, delete_if_exist=True)
 
         self.output_csv_service = OutputCsvService()
+        self.output_jpg_service = OutputJpgService()
 
     def _load_data(self) -> pd.DataFrame:
         Logger.print_title(f"Load Data: {self._config.dataset.name}")
@@ -81,19 +82,27 @@ class Main:
     def _evaluate(self, data_module: DataModule, trainer) -> dict:
         Logger.print_title("Evaluate")
         evaluate_service = EvaluateService(data_module, data_module.classes)
-        test_results, test = evaluate_service.run(trainer)
+        test_results, test, cm = evaluate_service.run(trainer)
         return {
             'test_results': test_results,
-            'test': test
+            'test': test,
+            'cm': cm
         }
 
     def _save_results(self, results: dict):
         Logger.print_title("Save Results")
         for name, result in results.items():
-            self.output_csv_service.save(
-                result,
-                os.path.join(self._folder, f'{name}.csv')
-            )
+            if isinstance(result, pd.DataFrame):
+                self.output_csv_service.save(
+                    result,
+                    os.path.join(self._folder, f'{name}.csv')
+                )
+            else:
+                if result:
+                    self.output_jpg_service.save(
+                        result,
+                        os.path.join(self._folder, f'{name}.jpg')
+                    )
 
     def _save_config(self):
         OmegaConf.save(self._config, os.path.join(self._folder, 'config.yaml'))
@@ -118,23 +127,6 @@ def main(cfg: DictConfig) -> None:
 
     main_program = Main(cfg)
     main_program.run()
-    """import torch
-    from torchmetrics import Precision, Accuracy, Recall, F1
-    preds = torch.tensor([1, 0, 0, 0])
-    target = torch.tensor([0, 0, 1, 1])
-    precision = Precision(average='macro', num_classes=2)
-    print(precision(preds, target))
-
-    # do accuracy, recall, f1
-    accuracy = Accuracy()
-    print(accuracy(preds, target))
-
-    recall = Recall(average='macro', num_classes=2)
-    print(recall(preds, target))
-
-    f1 = F1(average='macro', num_classes=2)
-    print(f1(preds, target))"""
-
 
 
 if __name__ == "__main__":

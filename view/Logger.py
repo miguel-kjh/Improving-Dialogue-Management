@@ -22,3 +22,7 @@ class Logger:
     def print_title(title: str) -> None:
         Logger.print_sep()
         print('\n' + title.upper() + '\n')
+
+    @staticmethod
+    def warning(msg: str, **kwargs):
+        print('WARNING: ' + msg, **kwargs)
