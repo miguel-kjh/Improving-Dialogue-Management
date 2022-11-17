@@ -1,5 +1,3 @@
 name: "multi_woz_dataset"
 DB_name: "multi_woz"
 domain: "TINY"
-intention: "Intention"
-action: "Action"

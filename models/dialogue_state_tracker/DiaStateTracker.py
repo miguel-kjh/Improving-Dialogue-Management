@@ -12,6 +12,8 @@ class DiaStateTracker(StateTracker):
 
     def __init__(self, class_correction: bool = False):
         super().__init__(class_correction)
+        self.start_action = 'A'
+        self.end_action = 'ZZ'
 
     def _get_embedding(
             self,
@@ -51,7 +53,9 @@ class DiaStateTracker(StateTracker):
     ) -> pd.DataFrame:
 
         df_data = df_data_oring.copy()
-        actions_db = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
+        actions_db = list(set(np.hstack(df_data[column_for_actions].values)))
+        actions_db = [self.start_action] + actions_db + [self.end_action]
+        actions_db = sorted(actions_db)
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         slots = sorted(list(set(np.hstack(df_data[self._slots_column].values))))
         entities = sorted(list(set(np.hstack(df_data[self._entity_column].values))))
@@ -66,7 +70,7 @@ class DiaStateTracker(StateTracker):
             last_action = None
             for row in df_group.to_dict('records'):
                 total_slots = row[self._slots_column]
-                actions = row[column_for_actions]
+                actions = [self.start_action] + row[column_for_actions] + [self.end_action]
                 emb = self._get_embedding(
                     entities=row['Entities'],
                     db_entities=entities,
@@ -82,7 +86,8 @@ class DiaStateTracker(StateTracker):
                 y_actions = np.zeros(mx_history_length)
                 real_label = np.zeros(len(actions_db))
                 last_idx = 0
-                for idx, action in enumerate(row[column_for_actions]):
+                labels = [self.start_action] + row[column_for_actions] + [self.end_action]
+                for idx, action in enumerate(labels):
                     y_actions[idx] = actions_db.index(action)
                     real_label[actions_db.index(action)] = 1
                     last_idx = idx

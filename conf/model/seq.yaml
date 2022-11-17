@@ -6,7 +6,7 @@ beam: true
 temperature: 1e-3
 dropout: 0.1
 batch_size: 32
-epochs: 1
+epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
