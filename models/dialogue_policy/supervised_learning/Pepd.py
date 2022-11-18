@@ -5,15 +5,15 @@ from models.dialogue_policy.supervised_learning.utils import GumbelConnector, on
 import random
 
 
-class Pedp(nn.Module):
+class Pepd(nn.Module):
     def __init__(self, cfg):
-        super(Pedp, self).__init__()
+        super(Pepd, self).__init__()
         self.cfg = cfg
         self.dropout = nn.Dropout(p=cfg.dropout)
         self.a_dim = cfg.a_dim
         self.decoder_hidden = cfg.h_dim // 2
         # State AutoEncoder
-        self.state_encoder = nn.Sequential(nn.LazyLinear(cfg.h_dim),
+        self.state_encoder = nn.Sequential(nn.Linear(cfg.embed_size, cfg.h_dim),
                                            nn.ReLU(),
                                            self.dropout,
                                            nn.Linear(cfg.h_dim, self.decoder_hidden))
@@ -100,8 +100,10 @@ class Pedp(nn.Module):
             pair_wise_logits.append(out)
         return onehot2id(torch.cat(pair_wise_logits, -1))
 
-    def forward(self, s, a_target_gold, beta, s_target_gold=None, s_target_pos=None, a_target_full=None, a_target_pos=None):
+    def forward(self, s, a_target_gold, beta, s_target_gold=None, s_target_pos=None, a_target_full=None,
+                a_target_pos=None):
 
+        print(s_target_pos.size())
         s_target_pos = s_target_pos.squeeze(1)
         a_target_pos = a_target_pos.squeeze(1)
         plan_act_tsr = torch.zeros(s.shape[0], self.a_dim)
@@ -145,11 +147,12 @@ class Pedp(nn.Module):
             #
             a_sample = a_target_full[:, step].long()  # [b, 1]
 
+            print(a_sample.size())
             h_a = self.act_emb(a_sample)
             h_a = self.dropout(h_a)
 
             # TRANSITION: latent state
-            if self.args.residual:
+            if self.cfg.residual:
                 residual = self.world_rnn(h_a.unsqueeze(0), h_s.unsqueeze(0))[1].squeeze(0)
                 h_s = h_s + residual
             else:
@@ -160,7 +163,7 @@ class Pedp(nn.Module):
 
             # EVALUATION: current action
             temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
-            if self.args.gumbel:
+            if self.cfg.gumbel:
                 eval_a_sample = torch.argmax(F.gumbel_softmax(a_weights, dim=-1, tau=self.cfg.temperature),
                                              dim=-1).long().unsqueeze(1)
             else:
@@ -263,3 +266,35 @@ class Pedp(nn.Module):
                loss_pred, pred_act_tsr, \
                loss_state, h_s_rec, loss_kl, \
                loss_term, plan_term_tsr, gold_term_tsr
+
+
+if __name__ == '__main__':
+    cfg = {}
+    cfg['s_dim'] = 78
+    cfg['h_dim'] = 200
+    cfg['a_dim'] = 10
+    cfg['max_len'] = 10
+    cfg['dropout'] = 0.1
+    cfg['embed_size'] = cfg['s_dim']
+    cfg['residual'] = True
+    cfg['gumbel'] = True
+    cfg['temperature'] = 1e-3
+
+
+    # dict to class
+    class Cfg:
+        def __init__(self, entries):
+            self.__dict__.update(entries)
+
+
+    cfg = Cfg(cfg)
+    model = Pepd(cfg)
+
+    batch = 34
+    s = torch.rand(batch, 78)
+    a_target_gold = torch.tensor(
+        [[0, 6, 6, 6, 6, 9, 10, 10, 10, 10]] * batch
+    )
+    s_target_pos = torch.tensor([[3] * batch]).T
+    x = model.forward(s, a_target_gold, 0.5, s, s_target_pos, a_target_gold, s_target_pos)
+    print(x)

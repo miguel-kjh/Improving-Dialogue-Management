@@ -5,6 +5,7 @@ from pytorch_lightning.loggers import WandbLogger
 from models.dialogue_policy.supervised_learning.DiaSeqPolicy import DiaSeqPolicy
 from models.dialogue_policy.supervised_learning.DiaMultiClassPolicy import DiaMultiClassPolicy
 from models.dialogue_policy.supervised_learning.DiaMultiDensePolicy import DiaMultiDensePolicy
+from models.dialogue_policy.supervised_learning.PepdPolicy import PedpPolicy
 from models.dialogue_policy.supervised_learning.Ted import Ted
 from models.dialogue_policy.supervised_learning.Red import Red
 from service.Pipeline import Pipeline
@@ -26,7 +27,8 @@ class TrainService(Pipeline):
             "RED": Red,
             "MC": DiaMultiClassPolicy,
             "MD": DiaMultiDensePolicy,
-            "SEQ": DiaSeqPolicy
+            "SEQ": DiaSeqPolicy,
+            "PEDP": PedpPolicy
         }
 
     def get_model(self, model: str, config: dict, actions: List[int], embedding_size: int) -> pl.LightningModule:
