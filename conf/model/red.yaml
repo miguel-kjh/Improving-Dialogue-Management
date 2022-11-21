@@ -6,7 +6,7 @@ num_layers: 1
 model_dim: 512
 hidden_size: 1024
 embedding_space: 20
-num_neg: 5
+num_neg: 1
 regularization_constant: 1e-3
 dropout_attention: 0.0
 dropout_hidden: 0.0

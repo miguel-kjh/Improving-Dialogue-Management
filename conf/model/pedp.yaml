@@ -17,4 +17,4 @@ activation: "relu"
 lr: 1e-3
 class_correction: False
 batch_size: 32
-epochs: 10
+epochs: 50

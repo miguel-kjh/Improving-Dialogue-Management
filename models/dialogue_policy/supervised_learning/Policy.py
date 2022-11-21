@@ -78,5 +78,8 @@ class Policy(pl.LightningModule, ABC):
         else:
             metrics = self._create_metrics(self.n_actions)
 
+        y_hat = y_hat.cpu().detach()
+        y = y.cpu().detach()
+
         for metric_name, metric in metrics.items():
             self.log(f'{name}_{metric_name}', metric(y_hat, y), prog_bar=True)
