@@ -32,8 +32,8 @@ class DiaSeqPolicy(ClassificationPolicy):
         return loss
 
     def test_step(self, batch, batch_idx):
-        s, s_target_seq, _, actions, log = batch
+        s, s_target_seq, _, actions, idx = batch
         _, pred = self(s, type='test', s_target_seq=s_target_seq)
         pred, a_target_gold = self._transfrom_tensors_for_prediction(pred, actions)
         self.log_metrics('test', pred, actions, multiclass=True)
-        self._update_test_log(s, actions, pred, log)
+        self._update_test_log(s, actions, pred, idx)

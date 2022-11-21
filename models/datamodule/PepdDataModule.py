@@ -23,13 +23,13 @@ class PepdDataset:
         state = torch.tensor(row['State'].tolist())
         a_target_gold = torch.tensor(row['Set_Label'].tolist(), dtype=torch.long)
         a_target_full = copy.deepcopy(a_target_gold)
-        last_pos = torch.tensor(row['Last_position'], dtype=torch.long)
+        last_pos = torch.tensor([row['Last_position']], dtype=torch.long).T
         s_pos = copy.deepcopy(last_pos)
         actions = torch.tensor(row['Real_label'], dtype=torch.long)
-        if index == len(self.df):
-            next_state = torch.zeros(state.shape)
-        else:
+        try:
             next_state = torch.tensor(self.df.iloc[index + 1]['State'].tolist())
+        except IndexError:
+            next_state = torch.zeros_like(state)
         return state, next_state, s_pos, a_target_gold, last_pos, a_target_full, actions, index
 
 

@@ -100,10 +100,17 @@ class Pepd(nn.Module):
             pair_wise_logits.append(out)
         return onehot2id(torch.cat(pair_wise_logits, -1))
 
-    def forward(self, s, a_target_gold, beta, s_target_gold=None, s_target_pos=None, a_target_full=None,
-                a_target_pos=None):
+    def forward(
+            self,
+            s,
+            a_target_gold,
+            beta,
+            s_target_gold=None,
+            s_target_pos=None,
+            a_target_full=None,
+            a_target_pos=None
+    ):
 
-        print(s_target_pos.size())
         s_target_pos = s_target_pos.squeeze(1)
         a_target_pos = a_target_pos.squeeze(1)
         plan_act_tsr = torch.zeros(s.shape[0], self.a_dim)
@@ -147,7 +154,6 @@ class Pepd(nn.Module):
             #
             a_sample = a_target_full[:, step].long()  # [b, 1]
 
-            print(a_sample.size())
             h_a = self.act_emb(a_sample)
             h_a = self.dropout(h_a)
 
@@ -199,27 +205,27 @@ class Pepd(nn.Module):
 
         # MODULE: plan diverse paths
         h_decode_lst = []
-        for _ in range(self.args.paths):
+        for _ in range(self.cfg.paths):
             h_s = h_0
             plan_act_tsr = torch.zeros(s.shape[0], self.a_dim)
             plan_state_full = torch.zeros_like(h_s)
             noted_pos = torch.zeros(h_s.shape[0]).long()
             for _ in range(self.cfg.max_len):
                 a_weights = self.plan_head(h_s)
-                if self.args.gumbel:
-                    a_sample = torch.argmax(F.gumbel_softmax(a_weights, dim=-1, tau=self.args.tau_plan_a),
+                if self.cfg.gumbel:
+                    a_sample = torch.argmax(F.gumbel_softmax(a_weights, dim=-1, tau=self.cfg.tau_plan_a),
                                             dim=-1).long()
                 else:
                     a_sample = torch.argmax(a_weights, dim=-1).long()
                 h_a = self.act_emb(a_sample)
-                if self.args.residual:
+                if self.cfg.residual:
                     residual = self.world_rnn(h_a.unsqueeze(0), h_s.unsqueeze(0))[1].squeeze(0)
                     h_s = h_s + residual
                 else:
                     h_s = self.world_rnn(h_a.unsqueeze(0), h_s.unsqueeze(0))[1].squeeze(0)
                 t_weights = self.term_head(torch.cat((h_0, h_s), dim=-1))
-                if self.args.gumbel:
-                    t_sample = torch.argmax(F.gumbel_softmax(t_weights, dim=-1, tau=self.args.tau_plan_t),
+                if self.cfg.gumbel:
+                    t_sample = torch.argmax(F.gumbel_softmax(t_weights, dim=-1, tau=self.cfg.tau_plan_t),
                                             dim=-1).long()
                 else:
                     t_sample = torch.argmax(t_weights, dim=-1).long()
@@ -243,7 +249,7 @@ class Pepd(nn.Module):
         for layer, g_width in zip(self.last_layers, self.gumbel_length_index):
             out_lst = [layer(x) for x in h_decode_lst]
             out = torch.mean(torch.stack(out_lst, dim=0), dim=0)
-            if self.args.gumbel:
+            if self.cfg.gumbel:
                 eval_logits.append(F.gumbel_softmax(out, dim=-1, tau=self.cfg.temperature))
             else:
                 eval_logits.append(out)
@@ -262,11 +268,7 @@ class Pepd(nn.Module):
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
         loss_pred = self.BCELoss(action_logits, id2onehot(proc_tgt_tsr))
 
-        return loss_plan, plan_act_tsr, \
-               loss_pred, pred_act_tsr, \
-               loss_state, h_s_rec, loss_kl, \
-               loss_term, plan_term_tsr, gold_term_tsr
-
+        return loss_pred, pred_act_tsr
 
 if __name__ == '__main__':
     cfg = {}
@@ -279,6 +281,9 @@ if __name__ == '__main__':
     cfg['residual'] = True
     cfg['gumbel'] = True
     cfg['temperature'] = 1e-3
+    cfg['paths'] = 10
+    cfg['tau_plan_a'] = 1e-3
+    cfg['tau_plan_t'] = 1e-3
 
 
     # dict to class
@@ -293,8 +298,17 @@ if __name__ == '__main__':
     batch = 34
     s = torch.rand(batch, 78)
     a_target_gold = torch.tensor(
-        [[0, 6, 6, 6, 6, 9, 10, 10, 10, 10]] * batch
+        [[0, 6, 6, 6, 6, 9, 9, 9, 9, 9]] * batch
     )
     s_target_pos = torch.tensor([[3] * batch]).T
-    x = model.forward(s, a_target_gold, 0.5, s, s_target_pos, a_target_gold, s_target_pos)
-    print(x)
+    loss, pred = model.forward(
+        s,
+        a_target_gold,
+        0.5,
+        s,
+        s_target_pos,
+        a_target_gold,
+        s_target_pos
+    )
+    print(loss)
+    print(pred.size())

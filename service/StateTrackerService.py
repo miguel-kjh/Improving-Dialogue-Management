@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import LabelEncoder
 
 from models.datamodule.DiaDataModule import DiaDataModule
+from models.datamodule.PepdDataModule import PepdDataModule
 from models.datamodule.TedDataModule import TedDataModule
 from models.dialogue_state_tracker.DiaStateCreator import DiaStateCreator
 from models.dialogue_state_tracker.TedStateCreator import TedStateCreator
@@ -82,4 +83,16 @@ class StateTrackerService(Pipeline):
                 df_state,
                 self.config['model']['batch_size']
             )
+        else:
+            state_creator = DiaStateCreator(
+                data,
+                self.config['state']['intention'],
+                self.config['state']['action']
+            )
+            df_state = state_creator.create_dataset()
+            return PepdDataModule(
+                df_state,
+                self.config['model']['batch_size']
+            )
+
 
