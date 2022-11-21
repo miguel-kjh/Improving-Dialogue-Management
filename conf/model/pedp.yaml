@@ -14,7 +14,7 @@ name: "PEDP"
 beta: 0.5
 opt: "Adam"
 activation: "relu"
-lr: 1e-3
+lr: 0.000785927677712986
 class_correction: False
 batch_size: 32
-epochs: 10
+epochs: 50
