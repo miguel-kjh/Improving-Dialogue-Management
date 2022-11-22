@@ -2,9 +2,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from models.dialogue_policy.supervised_learning.utils import GumbelConnector, onehot2id, id2onehot
+import pytorch_lightning as pl
 
-
-class DiaMultiDense(nn.Module):
+class DiaMultiDense(pl.LightningModule):
     def __init__(self, cfg):
         super(DiaMultiDense, self).__init__()
         self.cfg = cfg
@@ -23,7 +23,6 @@ class DiaMultiDense(nn.Module):
             self.last_layers.append(nn.Linear(cfg.a_dim // 4, gumbel_width))
 
         self.loss = nn.MultiLabelSoftMarginLoss()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def select_action(self, s):
         h_s = self.net(s)

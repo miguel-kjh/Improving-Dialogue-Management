@@ -3,9 +3,9 @@ from torch.autograd import Variable
 import torch.nn as nn
 from models.dialogue_policy.supervised_learning.utils import beam_decode
 import logging
+import pytorch_lightning as pl
 
-
-class DiaSeq(nn.Module):
+class DiaSeq(pl.LightningModule):
     def __init__(self, cfg):
         super(DiaSeq, self).__init__()
         self.cfg = cfg
@@ -73,7 +73,7 @@ class DiaSeq(nn.Module):
 
     def forward(self, s, train_type='train', a_target_seq=None):
         pred_act_seq = []
-        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim)
+        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
         pred_weight_lst = []
         beam_size = 1
 
@@ -83,7 +83,7 @@ class DiaSeq(nn.Module):
 
         # -- predicting
         with torch.no_grad():
-            bos_var = Variable(torch.LongTensor([self.sos_id]))
+            bos_var = Variable(torch.LongTensor([self.sos_id]).to(self.device))
         a_sample = bos_var.expand(s.shape[0] * beam_size, 1)
 
         # |h_0, h_t| for decoding init state
@@ -106,7 +106,7 @@ class DiaSeq(nn.Module):
             # for evaluation
             eval_a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
             pred_act_seq.append(eval_a_sample)
-            src_tsr = torch.ones_like(eval_a_sample).float()
+            src_tsr = torch.ones_like(eval_a_sample).float().to(self.device)
             pred_act_tsr.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
 
         # -- batch * len * h
@@ -115,7 +115,7 @@ class DiaSeq(nn.Module):
                               a_target_seq.contiguous().view(-1).long())
 
         logging.debug('pred' + '-' * 10)
-        logging.debug(torch.tensor([x[0].item() for x in pred_act_seq]))
+        logging.debug(torch.tensor([x[0].item() for x in pred_act_seq]).to(self.device))
         logging.debug(a_target_seq[0])
 
         return loss_pred, pred_act_tsr[:, :-3]

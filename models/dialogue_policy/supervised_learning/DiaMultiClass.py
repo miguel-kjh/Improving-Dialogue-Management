@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import pytorch_lightning as pl
+
 
 def gumbel_sigmoid_sample(logits, temperature, eps=1e-20):
     uniform1 = torch.rand(logits.size())
@@ -10,7 +12,7 @@ def gumbel_sigmoid_sample(logits, temperature, eps=1e-20):
     return torch.sigmoid(y / temperature)
 
 
-class DiaMultiClass(nn.Module):
+class DiaMultiClass(pl.LightningModule):
     def __init__(self, cfg):
         super(DiaMultiClass, self).__init__()
         self.cfg = cfg
@@ -25,7 +27,6 @@ class DiaMultiClass(nn.Module):
 
         #self.reset_param()
         self.loss = nn.BCEWithLogitsLoss()
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def reset_param(self):
         for part in [self.net]:

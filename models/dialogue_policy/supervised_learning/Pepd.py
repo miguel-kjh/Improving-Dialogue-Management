@@ -3,9 +3,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 from models.dialogue_policy.supervised_learning.utils import GumbelConnector, onehot2id, id2onehot
 import random
+import pytorch_lightning as pl
 
-
-class Pepd(nn.Module):
+class Pepd(pl.LightningModule):
     def __init__(self, cfg):
         super(Pepd, self).__init__()
         self.cfg = cfg
@@ -113,9 +113,9 @@ class Pepd(nn.Module):
 
         s_target_pos = s_target_pos.squeeze(1)
         a_target_pos = a_target_pos.squeeze(1)
-        plan_act_tsr = torch.zeros(s.shape[0], self.a_dim)
-        loss_state = torch.FloatTensor([0])
-        loss_kl = torch.FloatTensor([0])
+        plan_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
+        loss_state = torch.FloatTensor([0]).to(self.device)
+        loss_kl = torch.FloatTensor([0]).to(self.device)
         pred_weight_lst = []
         plan_state_lst = []
         plan_term_weight_lst = []
@@ -126,11 +126,11 @@ class Pepd(nn.Module):
             teacher_forcing = False
 
         # generate mask where 1 if action 0 if pad
-        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
+        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1).to(self.device)
         mask_begin = s_target_pos.unsqueeze(1).repeat(1, self.cfg.max_len)
         term_target_gold = mask_cols.eq(mask_begin - 1).float()
 
-        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
+        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1).to(self.device)
         mask_begin = a_target_pos.unsqueeze(1).repeat(1, self.cfg.max_len)
         mask = mask_cols.lt(mask_begin).long()
 
@@ -168,7 +168,7 @@ class Pepd(nn.Module):
             plan_term_weight_lst.append(self.term_head(torch.cat((h_0, h_s), dim=-1)).unsqueeze(1))
 
             # EVALUATION: current action
-            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
+            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(self.device)
             if self.cfg.gumbel:
                 eval_a_sample = torch.argmax(F.gumbel_softmax(a_weights, dim=-1, tau=self.cfg.temperature),
                                              dim=-1).long().unsqueeze(1)
@@ -196,7 +196,7 @@ class Pepd(nn.Module):
         gold_term_tsr = term_target_gold.argmax(-1)
 
         # LOSS: next state prediction
-        s_target_pos += (torch.arange(h_0.shape[0]) * len(plan_state_lst))
+        s_target_pos += (torch.arange(h_0.shape[0]) * len(plan_state_lst)).to(self.device)
         plan_state_concat = torch.cat(plan_state_lst, dim=1)  # -- [b * L, h_s] batch-0-time-1,2,3...,-batch-1-...
         plan_state_concat = torch.index_select(plan_state_concat.contiguous().view(-1, plan_state_concat.shape[-1]),
                                                dim=0, index=s_target_pos.long())
@@ -207,9 +207,9 @@ class Pepd(nn.Module):
         h_decode_lst = []
         for _ in range(self.cfg.paths):
             h_s = h_0
-            plan_act_tsr = torch.zeros(s.shape[0], self.a_dim)
-            plan_state_full = torch.zeros_like(h_s)
-            noted_pos = torch.zeros(h_s.shape[0]).long()
+            plan_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
+            plan_state_full = torch.zeros_like(h_s).to(self.device)
+            noted_pos = torch.zeros(h_s.shape[0]).long().to(self.device)
             for _ in range(self.cfg.max_len):
                 a_weights = self.plan_head(h_s)
                 if self.cfg.gumbel:
@@ -233,7 +233,7 @@ class Pepd(nn.Module):
                 plan_state_full = plan_state_full * (noted_pos != 1).unsqueeze(1) + h_s * (noted_pos == 1).unsqueeze(1)
                 noted_pos *= 2
                 # EVALUATION: note current plan act
-                temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
+                temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(self.device)
                 src_tsr = torch.ones_like(a_sample).float()
                 temp_act_onehot.scatter_(-1, a_sample.unsqueeze(1), src_tsr.unsqueeze(1))  # -- dim, index, val
                 plan_act_tsr += temp_act_onehot * t_sample.unsqueeze(1)
@@ -258,15 +258,15 @@ class Pepd(nn.Module):
         pred_act_tsr = onehot2id(torch.cat(eval_logits, -1))
 
         # LOSS: macro-action prediction
-        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim)
+        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
         for i in range(self.cfg.max_len):
-            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
+            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(self.device)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
-            src_tsr = torch.ones_like(eval_a_sample).float()
+            src_tsr = torch.ones_like(eval_a_sample).float().to(self.device)
             temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
-        loss_pred = self.BCELoss(action_logits, id2onehot(proc_tgt_tsr))
+        loss_pred = self.BCELoss(action_logits, id2onehot(proc_tgt_tsr).to(self.device))
 
         return loss_pred, pred_act_tsr
 
