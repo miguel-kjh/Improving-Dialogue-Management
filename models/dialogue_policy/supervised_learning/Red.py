@@ -8,8 +8,8 @@ from models.dialogue_policy.supervised_learning.EmbeddingPolicy import Embedding
 
 class Red(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, actions: List[int]):
-        super().__init__(config, actions)
+    def __init__(self, config: dict, actions: List[int], embedding_size: int):
+        super().__init__(config, actions, embedding_size)
 
         self.model = nn.LSTM(input_size=self.hparams.hidden_layers_sizes_pre_dial[-1],
                              hidden_size=self.hparams.hidden_size,
