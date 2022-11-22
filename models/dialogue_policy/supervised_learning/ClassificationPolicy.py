@@ -23,7 +23,7 @@ class ClassificationPolicy(Policy, ABC):
             self.test_results['Inputs'] += [s[idx].cpu().numpy()]
             self.test_results['Labels'] += [actions[idx].cpu().numpy()]
             self.test_results['Predictions'] += [pred[idx].cpu().numpy()]
-            self.test_results['IsCorrect'] += [all(actions[idx] == pred[idx])]
+            self.test_results['IsCorrect'] += [all(actions[idx].cpu().numpy() == pred[idx].cpu().numpy())]
 
     def _transfrom_tensors_for_prediction(self, x, y) -> Tuple[torch.Tensor, torch.Tensor]:
         x_hat = x.type(torch.int64)
