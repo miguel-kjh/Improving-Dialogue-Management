@@ -20,9 +20,9 @@ class ClassificationPolicy(Policy, ABC):
     def _update_test_log(self, s, actions, pred, log):
         for idx in range(s.size(0)):
             self.test_results['Index'] += [log[idx].item()]
-            self.test_results['Inputs'] += [s[idx]]
-            self.test_results['Labels'] += [actions[idx]]
-            self.test_results['Predictions'] += [pred[idx]]
+            self.test_results['Inputs'] += [s[idx].cpu().numpy()]
+            self.test_results['Labels'] += [actions[idx].cpu().numpy()]
+            self.test_results['Predictions'] += [pred[idx].cpu().numpy()]
             self.test_results['IsCorrect'] += [all(actions[idx] == pred[idx])]
 
     def _transfrom_tensors_for_prediction(self, x, y) -> Tuple[torch.Tensor, torch.Tensor]:

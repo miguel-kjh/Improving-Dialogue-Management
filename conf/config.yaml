@@ -2,9 +2,9 @@ database:
   - path: mongodb://localhost:27017
 defaults:
   - dataset: synthetic.yaml
-  - state: pedp.yaml
-  - model: pedp.yaml
+  - state: dia.yaml
+  - model: mc.yaml
 resources:
-  gpus: 0
+  gpus: 1
   seed: 2020
   wandb: false

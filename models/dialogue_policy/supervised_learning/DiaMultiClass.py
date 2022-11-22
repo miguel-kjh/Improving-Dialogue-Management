@@ -5,7 +5,7 @@ import torch.nn as nn
 def gumbel_sigmoid_sample(logits, temperature, eps=1e-20):
     uniform1 = torch.rand(logits.size())
     uniform2 = torch.rand(logits.size())
-    noise = -torch.log(torch.log(uniform2 + eps) / torch.log(uniform1 + eps) + eps)
+    noise = -torch.log(torch.log(uniform2 + eps) / torch.log(uniform1 + eps) + eps).to(logits.device)
     y = logits + noise
     return torch.sigmoid(y / temperature)
 
@@ -25,6 +25,7 @@ class DiaMultiClass(nn.Module):
 
         #self.reset_param()
         self.loss = nn.BCEWithLogitsLoss()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     def reset_param(self):
         for part in [self.net]:
@@ -42,19 +43,19 @@ class DiaMultiClass(nn.Module):
 
     def forward(self, s, a_target_gold, s_target_pos):
         max_len = a_target_gold.size(1)
-        mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1)
+        mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1).to(self.device)
         if len(s_target_pos.shape) == 1:
             s_target_pos = s_target_pos.unsqueeze(1)
         mask_begin = s_target_pos.repeat(1, max_len)
         mask = mask_cols.lt(mask_begin).long()
 
         probs = self.net(s)
-        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim)
+        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
 
         for i in range(max_len):
-            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
+            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(self.device)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
-            src_tsr = torch.ones_like(eval_a_sample).float()
+            src_tsr = torch.ones_like(eval_a_sample).float().to(self.device)
             temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val #TODO: check this
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
