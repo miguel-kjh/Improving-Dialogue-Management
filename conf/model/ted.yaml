@@ -17,7 +17,7 @@ dropout_action: 0.0
 batch_size: 64
 similarity: "cosine"
 loss: "margin"
-epochs: 10
+epochs: 1
 opt: "Adam"
 activation: "relu"
 lr: 1e-3

@@ -83,6 +83,7 @@ class Main:
         Logger.print_title("Evaluate")
         evaluate_service = EvaluateService(data_module, data_module.classes)
         test_results, test, cm = evaluate_service.run(trainer)
+        Logger.print_test(test)
         return {
             'test_results': test_results,
             'test': test,
