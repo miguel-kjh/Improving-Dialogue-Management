@@ -38,9 +38,11 @@ def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple'
                 stdout=subprocess.PIPE,
             )
             out, _ = process.communicate()
+            print(out)
             # get metrcis from out
-            metrics = re.findall(r'(?<=\n)\d+\.\d+', out.decode('utf-8'))
-            print(metrics)
+            regex = r'test_recall: \d.\d+|test_accuracy: \d.\d+|test_precision: \d.\d+|test_f1: \d.\d+'
+            metrics = re.findall(regex, out.decode('utf-8'))
+            print([m.split(':') for m in metrics])
             exit()
 
 
