@@ -20,7 +20,7 @@ MODELS = [
     ('pedp', 'pedp'),
 ]
 DATASET_SYNTHETIC = 'dataset=synthetic'
-EPOCHS = 1
+EPOCHS = 10
 
 PRINCIPAL_FOLDER = 'experiments'
 FIRST_EXPERIMENT = os.path.join(PRINCIPAL_FOLDER, 'check_if_the_relation_of_errors_and_metrics_are_lineal')
