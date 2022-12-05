@@ -24,7 +24,7 @@ class MongoDB(InputService, OutputService):
             df = pd.DataFrame(list(data))
         else:
             df = list(data)
-        Logger.info("Data has been Loaded from Mongo DB Server .... ")
+        Logger.info(f"All the Data in {path} has been Imported from Mongo DB Server .... ")
         return df
 
     def save(self, df: Object, path: str) -> None:

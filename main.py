@@ -108,8 +108,13 @@ class Main:
     def _save_config(self):
         OmegaConf.save(self._config, os.path.join(self._folder, 'config.yaml'))
 
+    def _check_data(self, df: pd.DataFrame):
+        assert isinstance(df, pd.DataFrame), 'The data is not a DataFrame'
+        assert not df.empty, f'The DataFrame is empty; path: {self._folder}'
+
     def run(self):
         df = self._load_data()
+        self._check_data(df)
 
         data_module = self._state_tracker(df)
 
