@@ -15,13 +15,13 @@ OPTIONS = '-m'
 MODELS = [
     ('ted', 'ted'),
     ('ted', 'red'),
-    #('dia', 'md'),
-    #('dia', 'mc'),
-    #('dia', 'seq'),
-    #('pedp', 'pedp'),
+    ('dia', 'md'),
+    ('dia', 'mc'),
+    ('dia', 'seq'),
+    ('pedp', 'pedp'),
 ]
 DATASET_SYNTHETIC = 'dataset=synthetic'
-EPOCHS = 1
+EPOCHS = 10
 
 PRINCIPAL_FOLDER = 'experiments'
 
@@ -87,6 +87,7 @@ def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple'
             results[model]['error'].append(error)
         results['comparative'][model] = copy.deepcopy(results[model]['test_f1'])
 
+
     # save in one excel file with one sheet per model
     with pd.ExcelWriter(os.path.join(FIRST_EXPERIMENT, 'results.xlsx')) as writer:
         for model, result in results.items():
@@ -141,8 +142,8 @@ def experiments_to_events(events: List[str] = None):
 
 def main():
     create_folder()
-    #check_if_the_relation_of_errors_and_metrics_are_lineal()
-    experiments_to_events()
+    check_if_the_relation_of_errors_and_metrics_are_lineal()
+    #experiments_to_events()
 
 
 if __name__ == '__main__':
