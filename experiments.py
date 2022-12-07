@@ -50,13 +50,13 @@ def create_folder(experiments: List[str] = None):
 
 def check_if_the_problem_is_simple_or_complex():
     results = {}
-    for dataset in DATASETS:
+    for dataset in tqdm(DATASETS, desc='Check if the problem is simple or complex'):
         results[dataset] = {
             'model': [],
-            'acc': [],
-            'f1': [],
-            'precision': [],
-            'recall': [],
+            'test_accuracy': [],
+            'test_f1': [],
+            'test_precision': [],
+            'test_recall': [],
         }
         for state, model in MODELS:
             process = subprocess.Popen(
@@ -65,7 +65,7 @@ def check_if_the_problem_is_simple_or_complex():
                     MAIN_PROGRAM,
                     OPTIONS,
                     DATASET_SYNTHETIC,
-                    f'dataset.name={dataset}_all',
+                    f'dataset.name={dataset}',
                     f'model={model}',
                     f'state={state}',
                     f'model.epochs={EPOCHS}',
@@ -81,6 +81,14 @@ def check_if_the_problem_is_simple_or_complex():
             for metric in metrics:
                 results[dataset][metric[0].strip()].append(float(metric[1].strip()))
             results[dataset]['model'].append(model)
+
+    # save in one excel file with one sheet per dataset
+    with pd.ExcelWriter(os.path.join(THIRD_EXPERIMENT, 'results.xlsx')) as writer:
+        for dataset, result in results.items():
+            df = pd.DataFrame(result)
+            df.to_excel(writer, sheet_name=dataset, index=False)
+    Logger.print_title('Results saved')
+
 
 
 def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple', epochs=EPOCHS):
@@ -181,8 +189,8 @@ def experiments_to_events(events: List[str] = None):
 def main():
     create_folder()
     check_if_the_problem_is_simple_or_complex()
-    experiments_to_events()
-    check_if_the_relation_of_errors_and_metrics_are_lineal()
+    #experiments_to_events()
+    #check_if_the_relation_of_errors_and_metrics_are_lineal()
 
 
 if __name__ == '__main__':
