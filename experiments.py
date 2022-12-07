@@ -11,43 +11,76 @@ from view.Logger import Logger
 import pandas as pd
 
 PROP = [0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9]
+DATASETS = ['ds1', 'ds2', 'ds3']
 PYTHON_CMD = 'py'
 MAIN_PROGRAM = '.\main.py'
 OPTIONS = '-m'
 MODELS = [
     ('ted', 'ted'),
     ('ted', 'red'),
-    #('dia', 'md'),
-    #('dia', 'mc'),
-    #('dia', 'seq'),
-    #('pedp', 'pedp'),
+    # ('dia', 'md'),
+    # ('dia', 'mc'),
+    # ('dia', 'seq'),
+    # ('pedp', 'pedp'),
 ]
 DATASET_SYNTHETIC = 'dataset=synthetic'
-EPOCHS = 1
+EPOCHS = 10
+GPUs = 0
 
 PRINCIPAL_FOLDER = 'experiments'
 
+THIRD_EXPERIMENT = os.path.join(PRINCIPAL_FOLDER, 'check_if_the_problem_is_simple_or_complex')
 FIRST_EXPERIMENT = os.path.join(PRINCIPAL_FOLDER, 'check_if_the_relation_of_errors_and_metrics_are_lineal')
 SECOND_EXPERIMENT = os.path.join(PRINCIPAL_FOLDER, 'experiments_to_events')
 
 
-def create_folder():
-    # create folder experiments
-    if not os.path.exists(PRINCIPAL_FOLDER):
-        os.mkdir(PRINCIPAL_FOLDER)
-    # create folder experiments/check_if_the_relation_of_errors_and_metrics_are_lineal
-    if not os.path.exists(FIRST_EXPERIMENT):
-        os.mkdir(FIRST_EXPERIMENT)
-    else:
-        for file in os.listdir(FIRST_EXPERIMENT):
-            os.remove(os.path.join(FIRST_EXPERIMENT, file))
-    # create folder experiments/experiments_to_events
-    if not os.path.exists(SECOND_EXPERIMENT):
-        os.mkdir(SECOND_EXPERIMENT)
-    else:
-        for file in os.listdir(SECOND_EXPERIMENT):
-            os.remove(os.path.join(SECOND_EXPERIMENT, file))
+def create_folder(experiments: List[str] = None):
+    if not experiments:
+        experiments = [THIRD_EXPERIMENT, FIRST_EXPERIMENT, SECOND_EXPERIMENT]
+
+    for experiment in experiments:
+        if not os.path.exists(experiment):
+            os.makedirs(experiment)
+        else:
+            for file in os.listdir(experiment):
+                os.remove(os.path.join(experiment, file))
+
     Logger.print_title('Folder created')
+
+
+def check_if_the_problem_is_simple_or_complex():
+    results = {}
+    for dataset in DATASETS:
+        results[dataset] = {
+            'model': [],
+            'acc': [],
+            'f1': [],
+            'precision': [],
+            'recall': [],
+        }
+        for state, model in MODELS:
+            process = subprocess.Popen(
+                [
+                    PYTHON_CMD,
+                    MAIN_PROGRAM,
+                    OPTIONS,
+                    DATASET_SYNTHETIC,
+                    f'dataset.name={dataset}_all',
+                    f'model={model}',
+                    f'state={state}',
+                    f'model.epochs={EPOCHS}',
+                    f'resources.gpus={GPUs}',
+                ],
+                stderr=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+            out, _ = process.communicate()
+            regex = r'test_recall: \d.\d+|test_accuracy: \d.\d+|test_precision: \d.\d+|test_f1: \d.\d+'
+            metrics = re.findall(regex, out.decode('utf-8'))
+            metrics = [m.split(':') for m in metrics]
+            for metric in metrics:
+                results[dataset][metric[0].strip()].append(float(metric[1].strip()))
+            results[dataset]['model'].append(model)
 
 
 def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple', epochs=EPOCHS):
@@ -88,7 +121,6 @@ def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple'
                 results[model][metric[0].strip()].append(float(metric[1].strip()))
             results[model]['error'].append(error)
         results['comparative'][model] = copy.deepcopy(results[model]['test_f1'])
-
 
     # save in one excel file with one sheet per model
     with pd.ExcelWriter(os.path.join(FIRST_EXPERIMENT, 'results.xlsx')) as writer:
@@ -148,8 +180,9 @@ def experiments_to_events(events: List[str] = None):
 
 def main():
     create_folder()
-    #check_if_the_relation_of_errors_and_metrics_are_lineal()
+    check_if_the_problem_is_simple_or_complex()
     experiments_to_events()
+    check_if_the_relation_of_errors_and_metrics_are_lineal()
 
 
 if __name__ == '__main__':
