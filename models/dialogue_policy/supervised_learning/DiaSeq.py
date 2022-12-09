@@ -100,7 +100,11 @@ class DiaSeq(pl.LightningModule):
                 a_target = a_target_seq[:, step]
                 a_sample = a_target.unsqueeze(1).long()
             else:
-                a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
+                try:
+                    a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
+                except:
+                    a_target = a_target_seq[:, step]
+                    a_sample = a_target.unsqueeze(1).long()
 
             # for evaluation
             eval_a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
