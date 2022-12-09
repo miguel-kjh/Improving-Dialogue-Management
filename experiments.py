@@ -17,14 +17,14 @@ MAIN_PROGRAM = '.\main.py'
 OPTIONS = '-m'
 MODELS = [
     ('ted', 'ted'),
-    # ('ted', 'red'),
-    # ('dia', 'md'),
-    # ('dia', 'mc'),
+    ('ted', 'red'),
+    ('dia', 'md'),
+    ('dia', 'mc'),
     ('dia', 'seq'),
-    # ('pedp', 'pedp'),
+    ('pedp', 'pedp'),
 ]
 DATASET_SYNTHETIC = 'dataset=synthetic'
-EPOCHS = 1
+EPOCHS = 10
 GPUs = 1
 
 PRINCIPAL_FOLDER = 'experiments'
@@ -180,11 +180,6 @@ def experiments_to_events(events: List[str] = None):
                     for metric in ['test_accuracy', 'test_f1', 'test_precision', 'test_recall']:
                         results[event][metric].append(results[event][metric][-1])
 
-    # save in one excel file with one sheet per event
-    for event, result in results.items():
-        print(event, result['model'])
-        print(event, result['error'])
-
     for event, result in results.items():
         df = pd.DataFrame(result)
         df.to_csv(os.path.join(SECOND_EXPERIMENT, f'{event}.csv'), index=False, sep=';')
@@ -193,9 +188,9 @@ def experiments_to_events(events: List[str] = None):
 
 def main():
     create_folder()
-    #check_if_the_problem_is_simple_or_complex()
+    check_if_the_problem_is_simple_or_complex()
     experiments_to_events()
-    #check_if_the_relation_of_errors_and_metrics_are_lineal()
+    check_if_the_relation_of_errors_and_metrics_are_lineal()
 
 
 if __name__ == '__main__':
