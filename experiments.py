@@ -140,7 +140,7 @@ def check_if_the_relation_of_errors_and_metrics_are_lineal(name_dataset='simple'
 
 def experiments_to_events(events: List[str] = None):
     if not events:
-        events = ['chit_chat'] #'change_idea'] #'change_domain', 'all_events']
+        events = ['chit_chat', 'change_idea', 'change_domain', 'all_events']
 
     results = {}
     for event in tqdm(events, desc='Experiments to events'):
@@ -180,10 +180,11 @@ def experiments_to_events(events: List[str] = None):
                     for metric in ['test_accuracy', 'test_f1', 'test_precision', 'test_recall']:
                         results[event][metric].append(results[event][metric][-1])
 
-    for event, result in results.items():
-        df = pd.DataFrame(result)
-        df.to_csv(os.path.join(SECOND_EXPERIMENT, f'{event}.csv'), index=False, sep=';')
-    Logger.print_title('Results saved')
+    # save in one excel file with one sheet per event
+    with pd.ExcelWriter(os.path.join(SECOND_EXPERIMENT, 'results.xlsx')) as writer:
+        for event, result in results.items():
+            df = pd.DataFrame(result)
+            df.to_excel(writer, sheet_name=event, index=False)
 
 
 def main():
