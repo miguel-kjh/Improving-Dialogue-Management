@@ -18,14 +18,14 @@ OPTIONS = '-m'
 MODELS = [
     ('ted', 'ted'),
     ('ted', 'red'),
-    # ('dia', 'md'),
-    # ('dia', 'mc'),
-    # ('dia', 'seq'),
-    # ('pedp', 'pedp'),
+    ('dia', 'md'),
+    ('dia', 'mc'),
+    ('dia', 'seq'),
+    ('pedp', 'pedp'),
 ]
 DATASET_SYNTHETIC = 'dataset=synthetic'
 EPOCHS = 10
-GPUs = 0
+GPUs = 1
 
 PRINCIPAL_FOLDER = 'experiments'
 
@@ -145,8 +145,8 @@ def experiments_to_events(events: List[str] = None):
     results = {}
     for event in tqdm(events, desc='Experiments to events'):
         results[event] = {
-            'model': [],
-            'error': [],
+            'model': [model for _, model in MODELS for _ in PROP],
+            'error': PROP * len(MODELS),
             'test_accuracy': [],
             'test_f1': [],
             'test_precision': [],
@@ -154,8 +154,6 @@ def experiments_to_events(events: List[str] = None):
         }
         for state, model in MODELS:
             for error in PROP:
-                results[event]['model'].append(model)
-                results[event]['error'].append(error)
                 process = subprocess.Popen(
                     [
                         PYTHON_CMD,
@@ -166,7 +164,7 @@ def experiments_to_events(events: List[str] = None):
                         f'model={model}',
                         f'state={state}',
                         f'model.epochs={EPOCHS}',
-                        f'resources.gpus=0',
+                        f'resources.gpus={GPUs}',
                     ],
                     stderr=subprocess.PIPE,
                     stdout=subprocess.PIPE,
@@ -175,22 +173,25 @@ def experiments_to_events(events: List[str] = None):
                 regex = r'test_recall: \d.\d+|test_accuracy: \d.\d+|test_precision: \d.\d+|test_f1: \d.\d+'
                 metrics = re.findall(regex, out.decode('utf-8'))
                 metrics = [m.split(':') for m in metrics]
-                for metric in metrics:
-                    results[event][metric[0].strip()].append(float(metric[1].strip()))
+                if metrics:
+                    for metric in metrics:
+                        results[event][metric[0].strip()].append(float(metric[1].strip()))
+                else:
+                    for metric in ['test_accuracy', 'test_f1', 'test_precision', 'test_recall']:
+                        results[event][metric].append(results[event][metric][-1])
 
     # save in one excel file with one sheet per event
     with pd.ExcelWriter(os.path.join(SECOND_EXPERIMENT, 'results.xlsx')) as writer:
         for event, result in results.items():
             df = pd.DataFrame(result)
             df.to_excel(writer, sheet_name=event, index=False)
-    Logger.print_title('Results saved')
 
 
 def main():
     create_folder()
     check_if_the_problem_is_simple_or_complex()
-    #experiments_to_events()
-    #check_if_the_relation_of_errors_and_metrics_are_lineal()
+    experiments_to_events()
+    check_if_the_relation_of_errors_and_metrics_are_lineal()
 
 
 if __name__ == '__main__':
