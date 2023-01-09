@@ -1,6 +1,6 @@
-n_features: -1
+name: "TED"
 encoding_dimension: 40
-hidden_layers_sizes_pre_dial: [[-1, 40]]
+hidden_layers_sizes_pre_dial: [40]
 hidden_layers_sizes_bot: []
 hidden_layers_sizes_post_dial: []
 heads: 4
@@ -8,18 +8,17 @@ num_layers: 1
 transformer_size: 128
 unidirectional_encoder: true
 embedding_space: 20
-num_neg: 5
+num_neg: 1
 regularization_constant: 1e-3
 dropout_attention: 0.0
 dropout_hidden: 0.0
 dropout_dialogue: 0.1
 dropout_action: 0.0
 batch_size: 64
-type_batch: "sequence"
+similarity: "cosine"
+loss: "margin"
 epochs: 10
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
-embedding_type: "binary" # "binary" or "rse"
-name: "TED"
 class_correction: False

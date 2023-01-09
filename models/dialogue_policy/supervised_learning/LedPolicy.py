@@ -8,10 +8,8 @@ from utils.ted_utils import create_embedding_layer
 
 class Led(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, n_actions: int):
-        super().__init__(config, n_actions)
-
-        print(self.num_features)
+    def __init__(self, config: dict, n_actions: int, embedding_size: int):
+        super().__init__(config, n_actions, embedding_size)
 
         self.model = nn.LSTM(input_size=self.num_features,
                              hidden_size=self.hparams.hidden_size,
@@ -21,7 +19,6 @@ class Led(EmbeddingPolicy, ABC):
 
         self.dense_transformer = create_embedding_layer(
             self.hparams.hidden_size,
-            self.hparams.embedding_space,
             self.hparams.dropout_dialogue,
             self.hparams.regularization_constant
         )

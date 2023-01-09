@@ -1,9 +1,9 @@
 import math
 from abc import ABC
+from typing import List
 
 import torch
-from torch import nn as nn
-from typing import List
+from torch import nn
 
 from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
 from models.dialogue_policy.supervised_learning.PositionalEncoding import PositionalEncoding
@@ -28,8 +28,8 @@ def get_tgt_mask(size) -> torch.tensor:
 
 class Ted(EmbeddingPolicy, ABC):
 
-    def __init__(self, config: dict, actions: List[int]):
-        super().__init__(config, actions)
+    def __init__(self, config: dict, n_actions: List[int], embedding_size: int):
+        super().__init__(config, n_actions, embedding_size)
 
         self.pos_encoder = PositionalEncoding(
             self.hparams.encoding_dimension,
@@ -58,7 +58,7 @@ class Ted(EmbeddingPolicy, ABC):
             if self.hparams.unidirectional_encoder \
             else None
         x = self.pre_dial(x)
-        x = x * math.sqrt(self.num_features)
+        x = x * math.sqrt(x.size(0))
         x = self.pos_encoder(x)
         x = self.transformer(x, mask=mask)
         x = x.mean(dim=1)

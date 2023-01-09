@@ -1,22 +1,22 @@
-n_features: -1
 encoding_dimension: 40
-hidden_layers_sizes_pre_dial: [[-1, 40]]
+hidden_layers_sizes_pre_dial: [40]
 hidden_layers_sizes_bot: []
 hidden_layers_sizes_post_dial: []
 num_layers: 1
 model_dim: 512
 hidden_size: 1024
 embedding_space: 20
-num_neg: 5
+num_neg: 1
 regularization_constant: 1e-3
 dropout_attention: 0.0
 dropout_hidden: 0.0
 dropout_dialogue: 0.1
 dropout_action: 0.0
 batch_size: 64
-type_batch: "sequence"
 epochs: 10
+similarity: "cosine"
+loss: "margin"
 opt: "Adam"
 activation: "relu"
 lr: 1e-3
-name: "LED"
+name: "RED"

@@ -18,31 +18,31 @@ def _f1_score(y_pred: Tensor, y_true: Tensor) -> Tensor:
     return f1(y_pred, y_true)
 
 
-def create_embedding_layer(initial_dimensions: int, final_dimensions: int, dropout: int, eps: float) -> nn.Sequential:
+def create_embedding_layer(final_dimensions: int, dropout: int, eps: float) -> nn.Sequential:
     return nn.Sequential(
-        nn.Linear(initial_dimensions, final_dimensions),
+        nn.LazyLinear(final_dimensions),
         nn.LayerNorm(final_dimensions, eps=eps),
         nn.Dropout(dropout)
     )
 
 
 def create_ffn_layer(
-        layer_sizes: List[List[int]],
+        layer_sizes: List[int],
         eps: float,
         use_bias: bool = True,
         activation=nn.ReLU()
 ) -> nn.Sequential:
     ffn = []
 
-    for initial_dimension, final_dimension in layer_sizes:
+    for dimension in layer_sizes:
         ffn.append(
-            nn.Linear(initial_dimension, final_dimension, bias=use_bias)
+            nn.LazyLinear(dimension, bias=use_bias)
         )
         ffn.append(
             activation
         )
         ffn.append(
-            nn.LayerNorm(final_dimension, eps=eps)
+            nn.LayerNorm(dimension, eps=eps)
         )
 
     return nn.Sequential(*ffn)

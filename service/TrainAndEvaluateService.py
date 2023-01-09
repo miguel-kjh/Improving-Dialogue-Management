@@ -12,15 +12,15 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from typing import List
 
 from service.Pipeline import Pipeline
-from service.TedDataModule import TedDataModule
+from models.datamodule.TedDataModule import TedDataModule
 
 from models.dialogue_state_tracker.BinaryStateTracker import BinaryStateTracker
 from models.dialogue_state_tracker.RseStateTracker import RseStateTracker
-from models.dialogue_policy.supervised_learning.TedPolicy import Ted
+from models.dialogue_policy.supervised_learning.Ted import Ted
 from models.dialogue_policy.supervised_learning.LedPolicy import Led
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from service.InputOutput.MongoDB import MongoDB
-from models.dialogue_policy.supervised_learning.StarSpacePolicy import StarSpacePolicy
+from models.dialogue_policy.supervised_learning.EmbeddingPolicy import EmbeddingPolicy
 from view.Logger import Logger
 
 
@@ -59,7 +59,7 @@ class TrainAndEvaluateService(Pipeline):
         assert not df.empty, f"Dataset " \
                              f"{os.path.join(configuration['database'][0]['path'], configuration['dataset']['name'], dataset_name)} is empty"
 
-        self.dataset = self.state_tracker.get_state_and_actions(
+        self.dataset = self.state_tracker.create(
             df,
             column_for_intentions=column_for_intentions,
             column_for_actions=column_for_actions,
@@ -102,7 +102,7 @@ class TrainAndEvaluateService(Pipeline):
         models = {
             "TED": Ted,
             "LED": Led,
-            "SS": StarSpacePolicy
+            "SS": EmbeddingPolicy
         }
         return models[model](config, actions)
 

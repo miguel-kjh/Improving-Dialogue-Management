@@ -12,6 +12,8 @@ class DiaStateTracker(StateTracker):
 
     def __init__(self, class_correction: bool = False):
         super().__init__(class_correction)
+        self.start_action = 'A'
+        self.end_action = 'ZZ'
 
     def _get_embedding(
             self,
@@ -42,7 +44,7 @@ class DiaStateTracker(StateTracker):
                     action)] = 1
         return emb
 
-    def get_state_and_actions(
+    def create(
             self,
             df_data_oring: pd.DataFrame,
             column_for_intentions,
@@ -51,22 +53,24 @@ class DiaStateTracker(StateTracker):
     ) -> pd.DataFrame:
 
         df_data = df_data_oring.copy()
-        actions_db = sorted(list(set(np.hstack(df_data[column_for_actions].values))))
+        actions_db = list(set(np.hstack(df_data[column_for_actions].values)))
+        actions_db = [self.start_action] + actions_db + [self.end_action]
+        actions_db = sorted(actions_db)
         intents = sorted(list(set(np.hstack(df_data[column_for_intentions].values))))
         slots = sorted(list(set(np.hstack(df_data[self._slots_column].values))))
-        mandatory_slots = sorted(list(set(np.hstack(df_data[self._mandatory_slot_column].values))))
-        optional_slots = sorted(list(set(np.hstack(df_data[self._optional_slot_column].values))))
         entities = sorted(list(set(np.hstack(df_data[self._entity_column].values))))
         tasks = sorted(list(set(np.hstack(df_data[self._task_column].values))))
         dialogue_state = self._get_schema_dialogue_state_dataset()
-        slots_by_domains = self._get_slots_by_domain(df_data)
+        dialogue_state['Last_position'] = []
+        dialogue_state['Real_label'] = []
+        mx_history_length = len(actions_db)
 
         df_data = df_data.groupby(by='Dialogue ID')
         for id_, df_group in tqdm(df_data, desc='StateTracker'):
             last_action = None
             for row in df_group.to_dict('records'):
                 total_slots = row[self._slots_column]
-                actions = row[column_for_actions]
+                actions = [self.start_action] + row[column_for_actions] + [self.end_action]
                 emb = self._get_embedding(
                     entities=row['Entities'],
                     db_entities=entities,
@@ -79,13 +83,19 @@ class DiaStateTracker(StateTracker):
                     slots=total_slots,
                     db_slots=slots
                 )
-                y_actions = np.zeros(len(actions_db))
-                for idx, action in enumerate(row[column_for_actions]):
-                    y_actions[idx] = actions_db.index(action) + 1
+                y_actions = np.zeros(mx_history_length)
+                real_label = np.zeros(len(actions_db))
+                last_idx = 0
+                labels = [self.start_action] + row[column_for_actions] + [self.end_action]
+                for idx, action in enumerate(labels):
+                    y_actions[idx] = actions_db.index(action)
+                    real_label[actions_db.index(action)] = 1
+                    last_idx = idx
                 self._add_state_to_schema(
                     dialogue_state,
                     id_,
                     row[column_for_intentions],
+                    row['Entities'],
                     total_slots,
                     last_action,
                     actions,
@@ -93,6 +103,8 @@ class DiaStateTracker(StateTracker):
                     row['Type'],
                     emb
                 )
+                dialogue_state['Last_position'].append(last_idx)
+                dialogue_state['Real_label'].append(real_label)
                 last_action = copy(actions)
 
         df = pd.DataFrame(dialogue_state)
@@ -107,15 +119,13 @@ def main():
     state_tracker = DiaStateTracker()
     column_for_intentions = 'Intention'
     column_for_actions = 'Action'
-    df = state_tracker.get_state_and_actions(
+    df = state_tracker.create(
         df,
         column_for_intentions=column_for_intentions,
         column_for_actions=column_for_actions
     )
-    #df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False, sep=';')
+    df.to_csv('SGD_dataset_TINY_state_tracker.csv', index=False, sep=';')
 
-    """mongodb_service.save(df, f"SGD_dataset_TINY_state_tracker_{column_for_intentions}_{column_for_actions}_"
-                             f"max_history={max_history_length}")"""
     embeddings = np.array(df['State'].tolist())
     print(embeddings.shape)
     print(embeddings[0][0])

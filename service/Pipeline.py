@@ -29,13 +29,7 @@ class Pipeline(metaclass=ABCMeta):
 
         self.filename = 'SGD_dataset'
 
-        self.priority = 0
-
     @abstractmethod
-    def run(self):
+    def run(self, data: object = None) -> object:
         raise NotImplementedError
-
-    # compare the priority of the pipeline
-    def __lt__(self, other):
-        return self.priority < other.priority
 

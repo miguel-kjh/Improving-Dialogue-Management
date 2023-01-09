@@ -3,26 +3,30 @@ from torch.autograd import Variable
 import torch.nn as nn
 from models.dialogue_policy.supervised_learning.utils import beam_decode
 import logging
-DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+import pytorch_lightning as pl
 
-
-class DiaSeq(nn.Module):
-    def __init__(self, args, cfg):
+class DiaSeq(pl.LightningModule):
+    def __init__(self, cfg):
         super(DiaSeq, self).__init__()
         self.cfg = cfg
-        self.args = args
         self.decoder_hidden = cfg.h_dim // 2
-        self.net = nn.Sequential(nn.Linear(cfg.s_dim, cfg.h_dim),
-                                           nn.ReLU(),
-                                           nn.Linear(cfg.h_dim, self.decoder_hidden))
-        self.act_emb = nn.Embedding(cfg.a_dim + 3, cfg.embed_size, padding_idx=168)
-        self.decoder = nn.GRU(cfg.embed_size + self.decoder_hidden, self.decoder_hidden, 1, dropout=args.dropout, bidirectional=False)
+        self.net = nn.Sequential(nn.LazyLinear(cfg.h_dim),
+                                 nn.ReLU(),
+                                 nn.Linear(cfg.h_dim, self.decoder_hidden))
+        self.act_emb = nn.Embedding(cfg.a_dim + 3, cfg.embed_size, padding_idx=cfg.a_dim + 2)
+        self.decoder = nn.GRU(
+            cfg.embed_size + self.decoder_hidden,
+            self.decoder_hidden,
+            1,
+            dropout=cfg.dropout,
+            bidirectional=False
+        )
 
         self.pred_head = nn.Linear(self.decoder_hidden, cfg.a_dim + 3)
 
         self.use_gpu = torch.cuda.is_available()
 
-        self.dropout = nn.Dropout(p=args.dropout)
+        self.dropout = nn.Dropout(p=cfg.dropout)
 
         self.tau = cfg.temperature
         self.loss = nn.CrossEntropyLoss(ignore_index=cfg.a_dim + 2)
@@ -33,20 +37,20 @@ class DiaSeq(nn.Module):
     def select_action(self, s):
         # [1, s_dim]
         s = s.unsqueeze(0)
-        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(DEVICE)
+        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim)
 
         h_s = self.net(s)
         h_0 = h_s.clone()
 
-        if self.args.beam:
+        if self.cfg.beam:
             _, id_lst = beam_decode(self.decoder, self.pred_head, self.act_emb, h_s, self.sos_id, self.eos_id, h_0)
             for id_tsr in id_lst:
                 # print(id_lst)
-                src_tsr = torch.ones_like(id_tsr).float().to(DEVICE)
+                src_tsr = torch.ones_like(id_tsr).float()
                 pred_act_tsr.scatter_(-1, id_tsr, src_tsr)  # -- dim, index, val
         else:
             with torch.no_grad():
-                bos_var = Variable(torch.LongTensor([self.sos_id])).to(DEVICE)
+                bos_var = Variable(torch.LongTensor([self.sos_id]))
             a_sample = bos_var.expand(s.shape[0], 1)
             for step in range(self.cfg.max_len):
                 h_a = self.act_emb(a_sample.squeeze(1))
@@ -59,24 +63,16 @@ class DiaSeq(nn.Module):
                 # a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
 
                 # for evaluation
-                src_tsr = torch.ones_like(a_sample).float().to(DEVICE)
+                src_tsr = torch.ones_like(a_sample).float()
                 pred_act_tsr.scatter_(-1, a_sample, src_tsr)  # -- dim, index, val
                 if a_sample == self.eos_id:
                     break
 
         return pred_act_tsr[:, :-3]
 
-    def forward(self, s, a_target_gold, beta, s_target_gold=None,
-                s_target_pos=None, train_type='train',  a_target_seq=None,  a_target_full=None, a_target_pos=None):
-        """
-        :param curriculum:
-        :param beta: prob to use teacher forcing
-        :param a_target_gold: [b, 20]  [x, x, 171, x, x, x, 2, 0, 0, 0, 0, 0, 0]
-        :param s: [b, s_dim]
-        :return: hidden_state after several rollout
-        """
+    def forward(self, s, train_type='train', a_target_seq=None):
         pred_act_seq = []
-        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(DEVICE)
+        pred_act_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
         pred_weight_lst = []
         beam_size = 1
 
@@ -86,7 +82,7 @@ class DiaSeq(nn.Module):
 
         # -- predicting
         with torch.no_grad():
-            bos_var = Variable(torch.LongTensor([self.sos_id])).to(DEVICE)
+            bos_var = Variable(torch.LongTensor([self.sos_id]).to(self.device))
         a_sample = bos_var.expand(s.shape[0] * beam_size, 1)
 
         # |h_0, h_t| for decoding init state
@@ -104,12 +100,16 @@ class DiaSeq(nn.Module):
                 a_target = a_target_seq[:, step]
                 a_sample = a_target.unsqueeze(1).long()
             else:
-                a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
+                try:
+                    a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
+                except:
+                    a_target = a_target_seq[:, step]
+                    a_sample = a_target.unsqueeze(1).long()
 
             # for evaluation
             eval_a_sample = torch.argmax(a_weights, dim=-1).unsqueeze(1).long()
             pred_act_seq.append(eval_a_sample)
-            src_tsr = torch.ones_like(eval_a_sample).float().to(DEVICE)
+            src_tsr = torch.ones_like(eval_a_sample).float().to(self.device)
             pred_act_tsr.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
 
         # -- batch * len * h
@@ -118,11 +118,39 @@ class DiaSeq(nn.Module):
                               a_target_seq.contiguous().view(-1).long())
 
         logging.debug('pred' + '-' * 10)
-        logging.debug(torch.tensor([x[0].item() for x in pred_act_seq]))
+        logging.debug(torch.tensor([x[0].item() for x in pred_act_seq]).to(self.device))
         logging.debug(a_target_seq[0])
 
-        return torch.FloatTensor([0]).to(DEVICE), torch.zeros(s.shape[0], self.a_dim - 3).to(DEVICE), \
-               loss_pred, pred_act_tsr[:, :-3], \
-               torch.FloatTensor([0]).to(DEVICE), torch.zeros_like(s).to(DEVICE), torch.FloatTensor([0]).to(DEVICE), \
-               torch.FloatTensor([0]).to(DEVICE), torch.zeros(s.shape[0]).to(DEVICE), torch.zeros(s.shape[0]).to(DEVICE)
+        return loss_pred, pred_act_tsr[:, :-3]
 
+
+if __name__ == '__main__':
+    cfg = {}
+    cfg['s_dim'] = 78
+    cfg['h_dim'] = 200
+    cfg['a_dim'] = 10
+    cfg['max_len'] = 10
+    cfg['dropout'] = 0.1
+    cfg['embed_size'] = 78
+    cfg['beam'] = True
+    cfg['temperature'] = 1e-3
+
+
+    # dict to class
+    class Cfg:
+        def __init__(self, entries):
+            self.__dict__.update(entries)
+
+
+    cfg = Cfg(cfg)
+
+    dia_multi_class = DiaSeq(cfg)
+    batch = 34
+    s = torch.rand(batch, 78)
+    a_target_gold = torch.tensor(
+        [[0, 6, 6, 6, 6, 9, 10, 10, 10, 10]] * batch
+    )
+    s_target_pos = torch.tensor([3] * batch)
+    l, r = dia_multi_class(s, a_target_seq=a_target_gold)
+    print(l)
+    print(r)

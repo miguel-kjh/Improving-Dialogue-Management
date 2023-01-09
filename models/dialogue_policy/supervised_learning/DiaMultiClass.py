@@ -1,29 +1,31 @@
 import torch
 import torch.nn as nn
 
+import pytorch_lightning as pl
+
 
 def gumbel_sigmoid_sample(logits, temperature, eps=1e-20):
     uniform1 = torch.rand(logits.size())
     uniform2 = torch.rand(logits.size())
-    noise = -torch.log(torch.log(uniform2 + eps) / torch.log(uniform1 + eps) + eps)
+    noise = -torch.log(torch.log(uniform2 + eps) / torch.log(uniform1 + eps) + eps).to(logits.device)
     y = logits + noise
     return torch.sigmoid(y / temperature)
 
 
-class DiaMultiClass(nn.Module):
+class DiaMultiClass(pl.LightningModule):
     def __init__(self, cfg):
         super(DiaMultiClass, self).__init__()
         self.cfg = cfg
         self.dropout = nn.Dropout(p=cfg.dropout)
         self.a_dim = cfg.a_dim
 
-        self.net = nn.Sequential(nn.Linear(cfg.s_dim, cfg.h_dim),
+        self.net = nn.Sequential(nn.LazyLinear(cfg.h_dim),
                                  nn.ReLU(),
                                  nn.Linear(cfg.h_dim, cfg.h_dim),
                                  nn.ReLU(),
                                  nn.Linear(cfg.h_dim, cfg.a_dim))
 
-        self.reset_param()
+        #self.reset_param()
         self.loss = nn.BCEWithLogitsLoss()
 
     def reset_param(self):
@@ -35,35 +37,27 @@ class DiaMultiClass(nn.Module):
                     nn.init.zeros_(param)
 
     def select_action(self, s):
-        if self.args.gumbel:
+        if self.cfg.gumbel:
             return gumbel_sigmoid_sample(self.net(s), 0.001).gt(0)
         else:
             return torch.sigmoid(self.net(s)).gt(0.5)
 
-    def forward(self, s, a_target_gold, s_target_pos=None):
-        """
-        :param s_target_pos:
-        :param s_target_gold: b * h_s where h_s is all 0 if not available
-        :param curriculum:
-        :param beta: prob to use teacher forcing
-        :param a_target_gold: [b, 20]  [x, x, 171, x, x, x, 2, 0, 0, 0, 0, 0, 0]
-        :param s: [b, s_dim]
-        :return: hidden_state after several rollout
-        """
-        mask_cols = torch.LongTensor(range(self.cfg.max_len)).repeat(s.shape[0], 1)
+    def forward(self, s, a_target_gold, s_target_pos):
+        max_len = a_target_gold.size(1)
+        mask_cols = torch.LongTensor(range(max_len)).repeat(s.shape[0], 1).to(self.device)
         if len(s_target_pos.shape) == 1:
             s_target_pos = s_target_pos.unsqueeze(1)
-        mask_begin = s_target_pos.repeat(1, self.cfg.max_len)
+        mask_begin = s_target_pos.repeat(1, max_len)
         mask = mask_cols.lt(mask_begin).long()
 
         probs = self.net(s)
-        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim)
+        proc_tgt_tsr = torch.zeros(s.shape[0], self.a_dim).to(self.device)
 
-        for i in range(self.cfg.max_len):
-            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim)
+        for i in range(max_len):
+            temp_act_onehot = torch.zeros(s.shape[0], self.a_dim).to(self.device)
             eval_a_sample = a_target_gold[:, i].long().unsqueeze(1)
-            src_tsr = torch.ones_like(eval_a_sample).float()
-            temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val
+            src_tsr = torch.ones_like(eval_a_sample).float().to(self.device)
+            temp_act_onehot.scatter_(-1, eval_a_sample, src_tsr)  # -- dim, index, val #TODO: check this
             proc_tgt_tsr += temp_act_onehot * mask[:, i].unsqueeze(1)
             proc_tgt_tsr = proc_tgt_tsr.ge(1).float()
 
@@ -78,12 +72,12 @@ class DiaMultiClass(nn.Module):
 
 if __name__ == '__main__':
     cfg = {}
-    cfg['s_dim'] = 553
+    cfg['s_dim'] = 78
     cfg['h_dim'] = 200
-    cfg['a_dim'] = 166
-    cfg['max_len'] = 20
-    cfg['dropout'] = 0.5
-    cfg['gumbel'] = False
+    cfg['a_dim'] = 10
+    cfg['max_len'] = 10
+    cfg['dropout'] = 0.1
+    cfg['gumbel'] = True
 
 
     # dict to class
@@ -95,8 +89,9 @@ if __name__ == '__main__':
     cfg = Cfg(cfg)
 
     dia_multi_class = DiaMultiClass(cfg)
-    s = torch.rand(32, 553)
-    a_target_gold = torch.rand(32, 20)
-    s_target_pos = torch.zeros(32, 1)
+    batch = 64
+    s = torch.rand(batch, 78)
+    a_target_gold = torch.rand(batch, 10)
+    s_target_pos = torch.randint(0, 10, (batch, 1))
     r = dia_multi_class(s, a_target_gold, s_target_pos=s_target_pos)
     print(r)
