@@ -4,13 +4,12 @@ Task-oriented dialogue systems (TODS) play an essential role, allowing users to 
 
 ## Introduction 📜
 
-For this project, we embraced cutting-edge natural language processing methodologies to craft dialogue solutions. We've incorporated data version control and leveraged MongoDB for our primary database needs.
+We embraced natural language processing methodologies for this project to craft dialogue solutions. We've incorporated data version control and leveraged MongoDB for our primary database needs.
 
 **Note:** Dive deeper into the data structure and the data processing techniques we've employed by visiting this repository:
 
 [**TODS-datasets-processor**](https://github.com/miguel-kjh/TODS-datasets-processor).
 
-This ancillary repository elucidates how we've designed our data schema and readied the data for this primary project.
 
 ---
 
