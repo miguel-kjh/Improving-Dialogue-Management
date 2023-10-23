@@ -81,17 +81,6 @@ Our project is powered by several pioneering tools and frameworks to ensure robu
 
 Utilizing these tools has been pivotal in ensuring the efficacy, scalability, and reliability of our code.
 
-## Citations 📝
+%## Citations 📝
 
-Kindly refer to our work using the citation below:
-
-```
-@misc{medinaramírez2023improving,
-      title={Improving Dialogue Management: Quality Datasets vs Models}, 
-      author={Miguel Ángel Medina-Ramírez and Cayetano Guerra-Artal and Mario Hernández-Tejera},
-      year={2023},
-      eprint={2310.01339},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL}
-}
-```
+%Kindly refer to our work using the citation below:
