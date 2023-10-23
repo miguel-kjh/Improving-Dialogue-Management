@@ -80,7 +80,3 @@ Our project is powered by several pioneering tools and frameworks to ensure robu
 - **Weights & Biases (wandb)** 📊: A platform optimized for deep learning experimentations. Dive into [wandb](https://wandb.ai/site).
 
 Utilizing these tools has been pivotal in ensuring the efficacy, scalability, and reliability of our code.
-
-%## Citations 📝
-
-%Kindly refer to our work using the citation below:
